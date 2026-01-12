@@ -29,16 +29,21 @@ Include `HRL.h` in your file:
 
 ```c
 #include "HRL.h"
-
----
+```
 
 ## Initialization
 
+```c
 void HRL_Init(HRL_uint api);
+```
 apis: HRL_OpenGL33, HRL_OpenGL45, HRL_Vulkan, HRL_DX11, HRL_DX12, HRL_Metal, HRL_NVN, HRL_GNM
 
+```c
 void HRL_InitContext(HRL_uint width, HRL_uint height, void* loader);
+```
 width / height: window or rendering context size
 loader: function to retrieve API function pointers (e.g., wglGetProcAddress, vkGetInstanceProcAddr)
 
+```c
 void HRL_Shutdown();
+```
