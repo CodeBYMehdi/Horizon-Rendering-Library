@@ -1,30 +1,44 @@
 # HRL Engine
 
-HRL est un moteur de rendu léger, multi-API, supportant OpenGL, Vulkan, DirectX, Metal et les consoles modernes (NVN, GNM). Il permet de gérer des meshes, lumières, textures, shaders, matériaux et viewports avec une API simple en C/C++.
+HRL is a lightweight, multi-API rendering engine supporting OpenGL, Vulkan, DirectX, Metal, and modern consoles (NVN, GNM).  
+It provides a simple C/C++ API to manage meshes, lights, textures, shaders, materials, viewports, and cameras.
 
 ---
 
-## Table des matières
+## Table of Contents
 
 - [Installation](#installation)  
-- [Initialisation](#initialisation)  
+- [Initialization](#initialization)  
 - [Frame](#frame)  
 - [Window](#window)  
-- [Gestion des erreurs](#gestion-des-erreurs)  
+- [Error Handling](#error-handling)  
 - [Meshes & Sprites](#meshes--sprites)  
 - [Lights](#lights)  
 - [Textures](#textures)  
 - [Shaders & Materials](#shaders--materials)  
 - [Post-process](#post-process)  
 - [Viewports](#viewports)  
-- [Caméras](#caméras)  
+- [Cameras](#cameras)  
+- [Constants & IDs](#constants--ids)  
 
 ---
 
 ## Installation
 
-Inclure `HRL.h` dans votre projet et définir `HRL_IMPL` dans **un seul fichier** avant l’inclusion pour générer l’implémentation :
+Include `HRL.h` in your file:
 
 ```c
-#define HRL_IMPL
 #include "HRL.h"
+
+---
+
+## Initialization
+
+void HRL_Init(HRL_uint api);
+apis: HRL_OpenGL33, HRL_OpenGL45, HRL_Vulkan, HRL_DX11, HRL_DX12, HRL_Metal, HRL_NVN, HRL_GNM
+
+void HRL_InitContext(HRL_uint width, HRL_uint height, void* loader);
+width / height: window or rendering context size
+loader: function to retrieve API function pointers (e.g., wglGetProcAddress, vkGetInstanceProcAddr)
+
+void HRL_Shutdown();
