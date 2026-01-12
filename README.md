@@ -92,6 +92,9 @@ void HRL_SetMeshScale(HRL_id meshid, float x, float y, float z);
 
 Supported mesh types:
 
+- `HRL_Sprite`
+- `HRL_2D_Mesh`
+- `HRL_3D_Mesh`
 
 | Mesh Type       | Description            |
 |-----------------|------------------------|
