@@ -1,6 +1,6 @@
 # HRL Engine
 
-HRL is a hight quality, multi-API rendering engine made for professional use. It supports OpenGL, Vulkan, DirectX, Metal, and modern consoles (NVN, GNM).
+HRL is a high quality, multi-API rendering engine made for professional use. It supports OpenGL, Vulkan, DirectX, Metal, and modern consoles (NVN, GNM).
 It provides a simple C/C++ API to manage meshes, lights, textures, shaders, materials, viewports, and cameras.
 
 ---
