@@ -1,6 +1,7 @@
 #include "hrl.h"
 
-#include "backend_vtable.h"
+#include "core/backend_vtable.h"
+#include "core/object_types.h"
 
 #include "backend/opengl33/gl33_backend.h"
 
@@ -15,76 +16,19 @@ static HRL_id GenerateID()
 	return currentID++;
 }
 
-//on nomme les structures static parceque elles ne sont visibles que dans l'implementation
-typedef struct {
-	HRL_uint type_;
-
-	HRL_id material_;
-
-	glm::vec3 position_;
-	glm::vec3 rotation_;
-	glm::vec3 scale_;
-}static_HRL_Mesh;
-
-typedef struct {
-	HRL_uint type_;
-
-	glm::vec3 position_;
-	glm::vec3 rotation_;
-
-	glm::vec3 color_;
-	float intensity_;
-	float attenuation_;
-}static_HRL_Light;
-
-typedef struct {
-	HRL_uint type_;
-	//stocke l'id généré par le backend
-	HRL_BackendHandle backend_handle_;
-}static_HRL_Texture;
-
-typedef struct {
-	HRL_id material_;
-}static_HRL_PostProcess;
-
-typedef struct {
-	//le handle repr�sente l'id du shader program
-	HRL_BackendHandle backend_handle_;
-}static_HRL_Shader;
-
-typedef struct {
-	HRL_id shader_;
-
-	std::unordered_map<const char*, int> intParams_;
-	std::unordered_map<const char*, HRL_id> textureParams_;
-	std::unordered_map<const char*, float> floatParams_;
-	std::unordered_map<const char*, glm::vec2> vec2Params_;
-	std::unordered_map<const char*, glm::vec3> vec3Params_;
-	std::unordered_map<const char*, glm::vec4> vec4Params_;
-}static_HRL_Material;
-
-typedef struct {
-	HRL_uint type_;
-
-	glm::vec3 position_;
-	glm::vec3 rotation_;
-
-	float value_;
-}static_HRL_Camera;
 
 //vtable utilis�e pour appeller les fonctions, ne doit jamais etre modifi� apres Init()
-static static_HRL_vtable g_Backend;
+static HRL_vtable g_Backend;
 
-static std::unordered_map<HRL_id, static_HRL_Mesh*> meshes_;
-static std::unordered_map<HRL_id, static_HRL_Light*> lights_;
-static std::unordered_map<HRL_id, static_HRL_Texture*> textures_;
-static std::unordered_map<HRL_id, static_HRL_PostProcess*> postprocesses_;
-static std::unordered_map<HRL_id, static_HRL_Shader*> shaders_;
-static std::unordered_map<HRL_id, static_HRL_Material*> materials_;
-
-static static_HRL_Camera camera_;
+static HRL_Camera camera_;
 
 static std::string lastErrorCode;
+void SetErrorCode(const std::string& e)
+{
+	//concu pour etre accessible partout (et ainsi pouvoir changer l'erreur de n'importe ou)
+	lastErrorCode = e;
+}
+
 
 void HRL_Init(HRL_uint _api)
 {
@@ -203,7 +147,7 @@ HRL_id HRL_CreateMesh(HRL_uint _type)
 {
 	if (_type == HRL_Sprite || _type == HRL_2D_Mesh || _type == HRL_3D_Mesh)
 	{
-		auto* m = new static_HRL_Mesh();
+		auto* m = new HRL_Mesh();
 		m->type_ = _type;
 		//default values
 		m->material_ = HRL_InvalidID;
@@ -214,7 +158,7 @@ HRL_id HRL_CreateMesh(HRL_uint _type)
 		HRL_id newId = GenerateID();
 		meshes_.emplace(newId, m);
 
-		g_Backend.RHI_CreateMesh(_type);
+		g_Backend.RHI_CreateMesh(_type, m);
 
 		return newId;
 	}
@@ -301,7 +245,7 @@ HRL_id HRL_CreateLight(HRL_uint _type)
 {
 	if (_type == HRL_PointLight || _type == HRL_DirectionalLight || _type == HRL_SpotLight)
 	{
-		auto* l = new static_HRL_Light();
+		auto* l = new HRL_Light();
 		l->type_ = _type;
 
 		//default values
@@ -314,7 +258,7 @@ HRL_id HRL_CreateLight(HRL_uint _type)
 		int newId = GenerateID();
 		lights_.emplace(newId, l);
 
-		g_Backend.RHI_CreateLight(_type);
+		g_Backend.RHI_CreateLight(_type, l);
 
 		return newId;
 	}
@@ -413,13 +357,12 @@ void HRL_SetLightRotation(HRL_id _lightid, float yaw, float pitch, float roll)
 
 HRL_id HRL_CreateTexture(HRL_uint _type, const char* _fileContent, size_t _bufferSize)
 {
-	auto* t = new static_HRL_Texture();
+	auto* t = new HRL_Texture();
 
 	HRL_id newId = GenerateID();
 	textures_.emplace(newId, t);
 
-	HRL_BackendHandle handle = g_Backend.RHI_CreateTexture(_type, _fileContent, _bufferSize);
-	t->backend_handle_ = handle;
+	g_Backend.RHI_CreateTexture(_type, _fileContent, _bufferSize, t);
 	
 	return newId;
 }
@@ -452,13 +395,12 @@ void HRL_DeletePostProcess(HRL_id _postid)
 
 HRL_id HRL_CreateShader(const char *_vertContent, size_t _vertSize, const char *_fragContent, size_t _fragSize)
 {
-	auto* m = new static_HRL_Shader();
+	auto* s = new HRL_Shader();
 
 	HRL_id newId = GenerateID();
-	shaders_.emplace(newId, m);
+	shaders_.emplace(newId, s);
 
 	HRL_BackendHandle handle = g_Backend.RHI_CreateShader(_vertContent, _vertSize, _fragContent, _fragSize);
-	m->backend_handle_ = handle;
 
 	return newId;
 }
@@ -471,7 +413,7 @@ void HRL_DeleteShader(HRL_id _shaderid)
 
 HRL_id HRL_CreateMaterial(HRL_id _shaderid)
 {
-	auto* m = new static_HRL_Material();
+	auto* m = new HRL_Material();
 	m->shader_ = _shaderid;
 
 	HRL_id newId = GenerateID();

@@ -1,12 +1,11 @@
 #include "gl33_backend.h"
 
 #include "gl33_renderer.h"
-#include "gl33_shader.h"
 #include "gl33_texture.h"
 
-static_HRL_vtable GetOpenGL33Backend()
+HRL_vtable GetOpenGL33Backend()
 {
-	static_HRL_vtable vtable;
+	HRL_vtable vtable;
 
 	vtable.RHI_Init = GL33_Init;
 	vtable.RHI_InitContext = GL33_InitContext;

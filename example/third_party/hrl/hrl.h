@@ -27,7 +27,7 @@ typedef unsigned int HRL_uint;
 #define HRL_DX11												0x0004
 #define HRL_DX12												0x0005
 #define HRL_Metal												0x0006
-#define HRL_NVN2												0x0007
+#define HRL_NVN													0x0007
 #define HRL_GNM													0x0008
 
 //Lights
@@ -55,8 +55,15 @@ typedef unsigned int HRL_uint;
 #define HRL_Tex_ShadowMap								0x0047
 #define HRL_Tex_CubeMap									0x0048
 
+//Camera
 #define HRL_Ortho												0x0051
 #define HRL_Perspective									0x0052
+
+
+//Default Shaders (we reserve theses ID)
+#define HRL_SpriteShader								(UINT32_MAX)
+#define HRL_Mesh2DShader								(UINT32_MAX - 1)
+#define HRL_Mesh3DShader								(UINT32_MAX - 2)
 
 
 #ifdef __cplusplus
@@ -81,6 +88,7 @@ extern "C" {
 
 	//Errors
 	const char* HRL_GetLastError();
+
 
 	//HRL Sprites
 	/**
@@ -126,7 +134,7 @@ extern "C" {
 	/**
 	 * @brief Supported extensions : png, jpeg, jpg, bmp, tga, gif (single image), hdr, psd (half)
 	 * To have more information, you can visit the stb website
-	 * @param _type HRL_Tex_Albedo, HRL_Tex_Normal, HRL_Tex_Specular, 
+	 * @param _type HRL_Tex_Albedo, HRL_Tex_Normal, HRL_Tex_Specular,
 	 * HRL_Tex_Roughness, HRL_Tex_Metalic, HRL_Tex_Alpha, HRL_Tex_ShadowMap
 	 * @param _fileContent content of the file (supported extensions) (opened in binary mode)
 	 * @return HRL_id of the new object
@@ -143,12 +151,19 @@ extern "C" {
 	HRL_id HRL_CreatePostProcess(HRL_id _matid);
 	void HRL_DeletePostProcess(HRL_id _postid);
 
+
+	//Shaders
+	HRL_id HRL_CreateShader(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize);
+	void HRL_DeleteShader(HRL_id _shaderid);
+
+
 	//Materials
+	//Wich contains values used by the source shader
 	/**
 	 * @param _shaderContent Code of the fragment shader (opened in binary mode)
 	 * @return HRL_id of the new object
 	 */
-	HRL_id HRL_CreateMaterial(const char* _shaderContent, size_t _bufferSize);
+	HRL_id HRL_CreateMaterial(HRL_id _shaderid);
 	/**
 	 * @param _meshid HRL_id of the light
 	 */

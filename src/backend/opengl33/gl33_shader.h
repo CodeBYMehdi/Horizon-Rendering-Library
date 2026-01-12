@@ -1,7 +1,7 @@
 #ifndef GL33_SHADER
 #define GL33_SHADER
 
-#include "../../backend_vtable.h"
+#include "../../core/backend_vtable.h"
 
 #include <glm/glm.hpp>
 #include <glad/glad.h>
@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <string>
 
-class GL33_Shader {
+class GL33_Shader final {
 public:
   GL33_Shader(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize);
   ~GL33_Shader();

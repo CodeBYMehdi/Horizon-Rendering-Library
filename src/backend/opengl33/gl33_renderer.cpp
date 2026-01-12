@@ -1,18 +1,18 @@
 #include "gl33_renderer.h"
 #include "gl33_ressources.h"
+#include "gl33_shader.h"
+#include "gl33_texture.h"
+
+#include "../../hrl.h"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-
-#include "../../hrl.h"
 
 //debug printf
 #include <cstdio>
 
 #include <unordered_map>
 #include <string>
-
-#include "gl33_shader.h"
 
 
 #define Buffer_Num      3
@@ -22,6 +22,7 @@
 #define Mesh3D_Buffer   2
 
 
+//OpenGL objects
 static GLuint vao[Buffer_Num];
 static GLuint vbo[Buffer_Num];
 static GLuint ebo[Buffer_Num];
@@ -34,17 +35,26 @@ unsigned int sprite_indices[] = {
 };
 
 
-std::unordered_map<HRL_id, GL33_Shader*> shaders_;
+//shaders
+std::unordered_map<HRL_BackendHandle, GL33_Shader*> shaders_;
 static GL33_Shader* sprite_shader_;
 static GL33_Shader* mesh2D_shader_;
 static GL33_Shader* mesh3D_shader_;
+
+
+//objects
+static std::unordered_map<HRL_id, HRL_Mesh*> meshes_;
+static std::unordered_map<HRL_id, HRL_Light*> lights_;
+static std::unordered_map<HRL_id, HRL_Texture*> textures_;
+static std::unordered_map<HRL_id, HRL_PostProcess*> postprocesses_;
+static std::unordered_map<HRL_id, HRL_Material*> materials_;
 
 
 //plus tard, faire du batching par material et du batching par texture atlas aussi
 
 
 
-/** API */
+/** Backend Implementation */
 
 void GL33_Init() {}
 
@@ -102,7 +112,12 @@ void GL33_InitContext(HRL_uint _width, HRL_uint _height, void* loader)
 
 
   //on crée les shaders
-  sprite_shader_ = new GL33_Shader((const char*)gl_sprite_vert_shader, gl_sprite_vert_shader_len, (const char*)gl_sprite_frag_shader, gl_sprite_frag_shader_len);
+  sprite_shader_ = new GL33_Shader(
+    (const char*)gl_sprite_vert_shader,
+    gl_sprite_vert_shader_len,
+    (const char*)gl_sprite_frag_shader,
+    gl_sprite_frag_shader_len
+    );
 }
 
 void GL33_Shutdown()
@@ -112,15 +127,80 @@ void GL33_Shutdown()
   glDeleteBuffers(Buffer_Num, ebo);
 }
 
-void GL33_BeginFrame()
+void GL33_BeginFrame(HRL_Light* lights, size_t lightCount)
 {
-
+  glClearColor(0.f, 0.f, 0.f, 1.f);
+  glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
-void GL33_EndFrame()
+void GL33_BindMaterial(HRL_Material *material, HRL_BackendHandle backendShader)
 {
+  GL33_Shader* s = nullptr;
 
+  //On utilise le bon shader
+  if (material->shader_ == HRL_SpriteShader)
+  {
+    s = sprite_shader_;
+  }
+  else if (material->shader_ == HRL_Mesh2DShader)
+  {
+    s = mesh2D_shader_;
+  }
+  else if (material->shader_ == HRL_Mesh3DShader)
+  {
+    s = mesh3D_shader_;
+  }
+  else
+  {
+    auto it = shaders_.find(backendShader);
+    if (it == shaders_.end())
+    {
+      return;
+    }
+    s = it->second;
+  }
+
+  //on bind le shader
+  s->Use();
+
+  //on set les uniform du shader bindé
+  for (auto [name, value] : material->intParams_)
+  {
+    s->SetInt(name, value);
+  }
+  for (auto [name, value] : material->floatParams_)
+  {
+    s->SetFloat(name, value);
+  }
+  for (auto [name, value] : material->textureParams_)
+  {
+    //les textures customs sont passées ici
+    s->SetInt(name, (int)value);
+  }
+  for (auto [name, value] : material->vec2Params_)
+  {
+    s->SetVec2(name, value);
+  }
+  for (auto [name, value] : material->vec3Params_)
+  {
+    s->SetVec3(name, value);
+  }
+  for (auto [name, value] : material->vec4Params_)
+  {
+    s->SetVec4(name, value);
+  }
+
+  //on set ensuite les uniforms backend only, model, view, etc...
+  s->SetInt("Albedo", 0);
+  s->SetInt("Normal", 1);
+  s->SetInt("Specular", 2);
+  s->SetInt("Roughness", 3);
+  s->SetInt("Metalic", 4);
+  s->SetInt("Alpha", 5);
+  s->SetInt("ShadowMap", 6);
+  s->SetInt("CubeMap", 7);
 }
+
 
 void GL33_CreateMesh(HRL_uint _type)
 {
@@ -132,7 +212,23 @@ void GL33_DeleteMesh(HRL_id _meshid)
 
 }
 
+void GL33_CreateTexture(HRL_uint type, const char* fileContent, size_t fileSize, HRL_Texture* texture)
+{
+  auto* tex = new GL33_Texture(fileContent, fileSize, type);
+}
+
+void GL33_DeleteTexture(HRL_BackendHandle textureHandle)
+{
+
+}
+
 HRL_BackendHandle GL33_CreateShader(const char *_vertContent, size_t _vertSize, const char *_fragContent, size_t _fragSize)
 {
   auto* s = new GL33_Shader(_vertContent, _vertSize, _fragContent, _fragSize);
+  return s->GetId();
+}
+
+void GL33_DeleteShader(HRL_BackendHandle _handleid)
+{
+
 }
