@@ -81,6 +81,7 @@ Returns the last error message as a string.
 
 ## Meshes & Sprites
 
+# Meshes:
 ```c
 HRL_id HRL_CreateMesh(HRL_uint type);
 void HRL_DeleteMesh(HRL_id meshid);
@@ -91,16 +92,39 @@ void HRL_SetMeshScale(HRL_id meshid, float x, float y, float z);
 ```
 
 Supported mesh types:
-
 - `HRL_Sprite`
 - `HRL_2D_Mesh`
 - `HRL_3D_Mesh`
 
-| Mesh Type       | Description            |
-|-----------------|------------------------|
-| `HRL_Sprite`    | 2D sprite mesh         |
-| `HRL_2D_Mesh`   | Generic 2D mesh        |
-| `HRL_3D_Mesh`   | Generic 3D mesh        |
+
+# Lights:
+```c
+HRL_id HRL_CreateLight(HRL_uint type);
+void HRL_DeleteLight(HRL_id lightid);
+void HRL_SetLightColor(HRL_id lightid, float r, float g, float b);
+void HRL_SetLightIntensity(HRL_id lightid, float intensity);
+void HRL_SetLightAttenuation(HRL_id lightid, float attenuation);
+void HRL_SetLightLocation(HRL_id lightid, float x, float y, float z);
+void HRL_SetLightRotation(HRL_id lightid, float yaw, float pitch, float roll);
+```
+
+Supported light types:
+- `HRL_PointLight`
+- `HRL_DirectionalLight`
+- `HRL_SpotLight`
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
