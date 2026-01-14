@@ -26,14 +26,14 @@ int main()
   HRL_InitContext(1280, 720, (void*)glfwGetProcAddress);
 
   //on crée la texture
-  HRL_id tex = HRL_CreateTexture(HRL_Tex_Albedo, , );
+  //HRL_id tex = HRL_CreateTexture(HRL_Tex_Albedo, , );
 
   //on crée le material
-  HRL_id mat = HRL_CreateMaterial(HRL_SpriteShader);
-  HRL_MaterialSetTexture(mat, "Albedo", tex);
+  //HRL_id mat = HRL_CreateMaterial(HRL_SpriteShader);
+  //HRL_MaterialSetTexture(mat, "Albedo", tex);
 
-  HRL_id sprite = HRL_CreateMesh(HRL_Sprite);
-  HRL_SetMeshMaterial(sprite, mat);
+  //HRL_id sprite = HRL_CreateMesh(HRL_Sprite);
+  //HRL_SetMeshMaterial(sprite, mat);
 
   //boucle principale
   while (!glfwWindowShouldClose(win))

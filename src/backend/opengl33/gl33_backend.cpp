@@ -12,10 +12,9 @@ HRL_vtable GetOpenGL33Backend()
 	vtable.RHI_Shutdown = GL33_Shutdown;
 
 	vtable.RHI_BeginFrame = GL33_BeginFrame;
-	vtable.RHI_EndFrame = GL33_EndFrame;
 
-	vtable.RHI_CreateMesh = GL33_CreateMesh;
-	vtable.RHI_DeleteMesh = GL33_DeleteMesh;
+	vtable.RHI_CreateTexture = GL33_CreateTexture;
+	vtable.RHI_DeleteTexture = GL33_DeleteTexture;
 
 	vtable.RHI_CreateShader = GL33_CreateShader;
 	vtable.RHI_DeleteShader = GL33_DeleteShader;

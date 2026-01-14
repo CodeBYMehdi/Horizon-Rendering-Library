@@ -1,5 +1,7 @@
 #include "gl33_texture.h"
 
+#include "../../core/utils_functions.h"
+
 /** Librarie donnant acces aux fonctions OpenGL */
 #include <glad/glad.h>
 
@@ -9,8 +11,6 @@
 
 #include <string>
 #include <unordered_map>
-
-extern void SetErrorCode(const std::string& e);
 
 static std::unordered_map<HRL_uint, GLuint> glSlots = {
 {HRL_Tex_Albedo, GL_TEXTURE0},
@@ -30,8 +30,11 @@ static std::unordered_map<HRL_uint, GLuint> glSlots = {
 {HRL_Tex_Custom6, GL_TEXTURE14},
 };
 
-GL33_Texture::GL33_Texture(const char *imageContent, const size_t imageSize, const HRL_uint type) : type_(type)
+int GL33_Texture::GL33_Create(const HRL_uint _type, const char* _imageContent, const size_t _imageSize)
 {
+  //on commence par initialiser le type de texture
+  type_ = _type;
+
   //on crée la texture OpenGL
   glGenTextures(1, &glID_);
   glBindTexture(GL_TEXTURE_2D, glID_);
@@ -46,13 +49,13 @@ GL33_Texture::GL33_Texture(const char *imageContent, const size_t imageSize, con
   stbi_set_flip_vertically_on_load(true);
 
   // Convertir std::vector<char>::data() en unsigned char* et sa taille en int
-  unsigned char *data = stbi_load_from_memory(
-      (stbi_uc const*)imageContent,        //Pointeur vers les données
-      imageSize,            //Taille totale du tampon
-      &width_,
-      &height_,
-      &nr_channels_,
-      STBI_rgb_alpha
+  unsigned char* data = stbi_load_from_memory(
+    (stbi_uc const*)_imageContent,        //Pointeur vers les données
+    _imageSize,            //Taille totale du tampon
+    &width_,
+    &height_,
+    &nr_channels_,
+    STBI_rgb_alpha
   );
 
   if (data)

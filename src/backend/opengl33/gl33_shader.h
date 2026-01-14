@@ -11,7 +11,10 @@
 
 class GL33_Shader final {
 public:
-  GL33_Shader(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize);
+  GL33_Shader()=default;
+
+  int GL33_Create(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize);
+
   ~GL33_Shader();
 
   uint64_t GetId() const;

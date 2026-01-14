@@ -5,7 +5,7 @@
 #ifndef HRL_IMPL
 #define HRL_IMPL
 
-#include <cstdint>
+#include <stdint.h>
 
 //ajouter des debug views (genre activer que l'albedo ou que la normal, montrer la lumiere, les reflections, etc)
 //suport multiviewport (avec HRL_CreateViewport et tout) (toujours 1 camera de rendu par viewport)
@@ -54,6 +54,14 @@ typedef unsigned int HRL_uint;
 #define HRL_Tex_Alpha										0x0046
 #define HRL_Tex_ShadowMap								0x0047
 #define HRL_Tex_CubeMap									0x0048
+
+#define HRL_Tex_Custom0									0x0049
+#define HRL_Tex_Custom1									0x004A
+#define HRL_Tex_Custom2									0x004B
+#define HRL_Tex_Custom3									0x004C
+#define HRL_Tex_Custom4									0x004D
+#define HRL_Tex_Custom5									0x004E
+#define HRL_Tex_Custom6									0x004F
 
 //Camera
 #define HRL_Ortho												0x0051
@@ -207,5 +215,12 @@ extern "C" {
 #ifdef __cplusplus
 } //extern "C"
 #endif
+
+
+//macros
+//concatenation fausse!
+#define HRL_CheckErrors() \
+	printf(HRL_GetLastError() + __FILE__ + __LINE__)
+
 
 #endif //HRL_IMPL

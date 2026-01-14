@@ -1,5 +1,7 @@
 #include "gl33_shader.h"
 
+#include "../../core/utils_functions.h"
+
 #include <unordered_map>
 #include <string>
 
@@ -8,7 +10,7 @@
 //pour glm::value_ptr
 #include <glm/gtc/type_ptr.hpp>
 
-GL33_Shader::GL33_Shader(const char *_vertContent, size_t _vertSize, const char *_fragContent, size_t _fragSize)
+int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize)
 {
   //id des shaders
   unsigned int vertex, fragment;
@@ -23,7 +25,8 @@ GL33_Shader::GL33_Shader(const char *_vertContent, size_t _vertSize, const char 
   if (!success)
   {
     glGetShaderInfoLog(vertex, 512, nullptr, infoLog);
-    //LOG_ERROR("Vertex Compilation Failed : " + error);
+    SetErrorCode("Vertex Compilation Failed : ");
+    return -1;
   }
 
   //creation et compilation du fragment shader
@@ -35,7 +38,8 @@ GL33_Shader::GL33_Shader(const char *_vertContent, size_t _vertSize, const char 
   if (!success)
   {
     glGetShaderInfoLog(fragment, 512, nullptr, infoLog);
-    //LOG_ERROR("Fragment Compilation Failed : " + error);
+    SetErrorCode("Fragment Compilation Failed : ");
+    return -1;
   }
 
   //Lier les shaders dans un programme
@@ -49,13 +53,18 @@ GL33_Shader::GL33_Shader(const char *_vertContent, size_t _vertSize, const char 
   if (!success)
   {
     glGetProgramInfoLog(id, 512, nullptr, infoLog);
-    //LOG_ERROR("Shader Program Failed : " + error);
+    SetErrorCode("Shader Program Failed : ");
+    return -1;
   }
 
   //nettoyage des shaders intermediaires (une fois liées dans un programme, elles ne sont plus nécéssaires individuellement)
   glDeleteShader(vertex);
   glDeleteShader(fragment);
+
+  return 0;
 }
+
+
 
 GL33_Shader::~GL33_Shader()
 {

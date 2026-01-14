@@ -29,17 +29,8 @@ typedef struct {
 }HRL_Light;
 
 typedef struct {
-  HRL_uint type_;
-  //stocke l'id généré par le backend
-}HRL_Texture;
-
-typedef struct {
   HRL_id material_;
 }HRL_PostProcess;
-
-typedef struct {
-  //le handle repr�sente l'id du shader program
-}HRL_Shader;
 
 typedef struct {
   HRL_id shader_;

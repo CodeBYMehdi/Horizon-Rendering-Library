@@ -2,6 +2,8 @@
 
 #include "core/backend_vtable.h"
 #include "core/object_types.h"
+//on inclus utils functions car hrl.cpp contient la définition de std::string lastError;
+#include "core/utils_functions.h"
 
 #include "backend/opengl33/gl33_backend.h"
 
@@ -9,25 +11,18 @@
 #include <string>
 #include <glm/glm.hpp>
 
-//Generer un id pour les objets HRL
-static HRL_id currentID = 0;
-static HRL_id GenerateID()
-{
-	return currentID++;
-}
-
 
 //vtable utilis�e pour appeller les fonctions, ne doit jamais etre modifi� apres Init()
 static HRL_vtable g_Backend;
 
-static HRL_Camera camera_;
 
-static std::string lastErrorCode;
-void SetErrorCode(const std::string& e)
-{
-	//concu pour etre accessible partout (et ainsi pouvoir changer l'erreur de n'importe ou)
-	lastErrorCode = e;
-}
+//erreurs//
+std::string lastErrorCode;
+
+
+//objects//
+static std::unordered_map<HRL_id, HRL_Mesh*> meshes_;
+static std::unordered_map<HRL_id, HRL_Material*> materials_;
 
 
 void HRL_Init(HRL_uint _api)
@@ -90,32 +85,6 @@ void HRL_Shutdown()
 	}
 	meshes_.clear();
 
-	for (auto [id, light] : lights_)
-	{
-		delete light;
-	}
-	lights_.clear();	
-	
-	for (auto [id, texture] : textures_)
-	{
-		g_Backend.RHI_DeleteTexture(texture->backend_handle_);
-		delete texture;
-	}
-	textures_.clear();
-
-	for (auto [id, post] : postprocesses_)
-	{
-		delete post;
-	}
-	postprocesses_.clear();
-
-	for (auto [id, shader] : shaders_)
-	{
-		g_Backend.RHI_DeleteShader(shader->backend_handle_);
-		delete shader;
-	}
-	shaders_.clear();
-
 	for (auto [id, material] : materials_)
 	{
 		delete material;
@@ -132,8 +101,13 @@ void HRL_BeginFrame()
 
 void HRL_EndFrame()
 {
-	g_Backend.RHI_EndFrame();
+	//appels à RHI_DrawMesh, HRI_BindMaterial, etc...
 }
+
+void HRL_WindowResizeCallback(int _width, int _height)
+{
+}
+
 
 const char* HRL_GetLastError()
 {
@@ -155,10 +129,8 @@ HRL_id HRL_CreateMesh(HRL_uint _type)
 		m->rotation_ = glm::vec3(0.f);
 		m->scale_ = glm::vec3(1.f);
 
-		HRL_id newId = GenerateID();
+		HRL_id newId = GenerateHRL_ID();
 		meshes_.emplace(newId, m);
-
-		g_Backend.RHI_CreateMesh(_type, m);
 
 		return newId;
 	}
@@ -179,7 +151,6 @@ void HRL_DeleteMesh(HRL_id _meshid)
 	}
 	else
 	{
-		g_Backend.RHI_DeleteMesh(_meshid);
 		delete it->second;
 		meshes_.erase(_meshid);
 	}
@@ -243,180 +214,71 @@ void HRL_SetMeshScale(HRL_id _meshid, float x, float y, float z)
 
 HRL_id HRL_CreateLight(HRL_uint _type)
 {
-	if (_type == HRL_PointLight || _type == HRL_DirectionalLight || _type == HRL_SpotLight)
-	{
-		auto* l = new HRL_Light();
-		l->type_ = _type;
-
-		//default values
-		l->position_ = glm::vec3(0.f);
-		l->rotation_ = glm::vec3(0.f);
-		l->color_ = glm::vec3(1.f);
-		l->intensity_ = 100.f;
-		l->attenuation_ = 100.f;
-
-		int newId = GenerateID();
-		lights_.emplace(newId, l);
-
-		g_Backend.RHI_CreateLight(_type, l);
-
-		return newId;
-	}
-	else
-	{
-		lastErrorCode = "HRL_CreateLight, invalid type";
-		return HRL_InvalidID;
-	}
 }
-
 void HRL_DeleteLight(HRL_id _lightid)
 {
-	auto it = lights_.find(_lightid);
-	if (it == lights_.end())
-	{
-		lastErrorCode = "HRL_DeleteLight, invalid ID";
-		return;
-	}
-	else
-	{
-		g_Backend.RHI_DeleteLight(_lightid);
-		delete it->second;
-		lights_.erase(_lightid);
-	}
 }
-
 void HRL_SetLightColor(HRL_id _lightid, float x, float y, float z)
 {
-	auto it = lights_.find(_lightid);
-	if (it == lights_.end())
-	{
-		lastErrorCode = "HRL_SetLightColor, invalid ID";
-		return;
-	}
-	else
-	{
-		it->second->color_ = glm::vec3(x, y, z);
-	}
 }
-
 void HRL_SetLightIntensity(HRL_id _lightid, float i)
 {
-	auto it = lights_.find(_lightid);
-	if (it == lights_.end())
-	{
-		lastErrorCode = "HRL_SetLightIntensity, invalid ID";
-		return;
-	}
-	else
-	{
-		it->second->intensity_ = i;
-	}
 }
-
 void HRL_SetLightAttenuation(HRL_id _lightid, float a)
 {
-	auto it = lights_.find(_lightid);
-	if (it == lights_.end())
-	{
-		lastErrorCode = "HRL_SetLightAttenuation, invalid ID";
-		return;
-	}
-	else
-	{
-		it->second->attenuation_ = a;
-	}
 }
-
 void HRL_SetLightLocation(HRL_id _lightid, float x, float y, float z)
 {
-	auto it = lights_.find(_lightid);
-	if (it == lights_.end())
-	{
-		lastErrorCode = "HRL_SetLightLocation, invalid ID";
-		return;
-	}
-	else
-	{
-		it->second->position_ = glm::vec3(x, y, z);
-	}
 }
-
 void HRL_SetLightRotation(HRL_id _lightid, float yaw, float pitch, float roll)
 {
-	auto it = lights_.find(_lightid);
-	if (it == lights_.end())
-	{
-		lastErrorCode = "HRL_SetLightRotation, invalid ID";
-		return;
-	}
-	else
-	{
-		it->second->rotation_ = glm::vec3(yaw, pitch, roll);
-	}
 }
 
+
+
+//Textures//
 HRL_id HRL_CreateTexture(HRL_uint _type, const char* _fileContent, size_t _bufferSize)
 {
-	auto* t = new HRL_Texture();
-
-	HRL_id newId = GenerateID();
-	textures_.emplace(newId, t);
-
-	g_Backend.RHI_CreateTexture(_type, _fileContent, _bufferSize, t);
-	
-	return newId;
+	//gestion des erreurs auto par le backend
+	return g_Backend.RHI_CreateTexture(_type, _fileContent, _bufferSize);
 }
 
 void HRL_DeleteTexture(HRL_id _textureid)
 {
-	auto it = textures_.find(_textureid);
-	if (it == textures_.end())
-	{
-		lastErrorCode = "HRL_DeleteTexture, invalid ID";
-		return;
-	}
-	else
-	{
-		g_Backend.RHI_DeleteTexture(it->second->backend_handle_);
-		delete it->second;
-		textures_.erase(it);
-	}
+	g_Backend.RHI_DeleteTexture(_textureid);
 }
 
+
+
+//Post Process//
 HRL_id HRL_CreatePostProcess(HRL_id _matid)
 {
-	return HRL_InvalidID;
 }
-
 void HRL_DeletePostProcess(HRL_id _postid)
 {
-
 }
 
+
+//Shaders//
 HRL_id HRL_CreateShader(const char *_vertContent, size_t _vertSize, const char *_fragContent, size_t _fragSize)
 {
-	auto* s = new HRL_Shader();
-
-	HRL_id newId = GenerateID();
-	shaders_.emplace(newId, s);
-
-	HRL_BackendHandle handle = g_Backend.RHI_CreateShader(_vertContent, _vertSize, _fragContent, _fragSize);
-
-	return newId;
+	//on return directement l'id, le backend gere les erreurs et retourne InvalidID en cas d'erreur
+	return g_Backend.RHI_CreateShader(_vertContent, _vertSize, _fragContent, _fragSize);
 }
 
 void HRL_DeleteShader(HRL_id _shaderid)
 {
-
+	g_Backend.RHI_DeleteShader(_shaderid);
 }
 
 
+//Materials//
 HRL_id HRL_CreateMaterial(HRL_id _shaderid)
 {
 	auto* m = new HRL_Material();
 	m->shader_ = _shaderid;
 
-	HRL_id newId = GenerateID();
+	HRL_id newId = GenerateHRL_ID();
 	materials_.emplace(newId, m);
 
 	return newId;
@@ -461,14 +323,8 @@ void HRL_MaterialSetTexture(HRL_id _matid, const char* _uniformName, HRL_id _tex
 		lastErrorCode = "HRL_MaterialSetTexture, invalid material ID";
 		return;
 	}
-	//puis on v�rifie que la texture existe
-	auto it_tex = textures_.find(_textureid);
-	if (it_tex == textures_.end())
-	{
-		lastErrorCode = "HRL_MaterialSetTexture, invalid texture ID";
-		return;
-	}
 
+	//on v�rifie que la texture existe au moment de RHI_BindMaterial, car ici on a pas acces aux textures
 	it_mat->second->textureParams_[_uniformName] = _textureid;
 }
 

@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.31)
 project(hrl)
 
 #C++ 20 Minimum
-set(CMAKE_CXX_STANDARD_REQUIRED 20)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 #creer le fichier generated dans le fichier cmake
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/generated)
@@ -19,6 +21,11 @@ function(embed_binary INPUT_FILE OUTPUT_NAME)
         COMMENT "Embeding ${INPUT_FILE}"
     )
 
+    #on marque ces fichier .cpp comme generés
+    set_source_files_properties(${OUTPUT_CPP}
+            PROPERTIES GENERATED TRUE
+    )
+
     set(EMBEDDED_SOURCES ${EMBEDDED_SOURCES} ${OUTPUT_CPP} PARENT_SCOPE)
 endfunction()
 
@@ -32,6 +39,7 @@ embed_binary(${CMAKE_SOURCE_DIR}/src/shaders/opengl/ui.frag.glsl gl_ui_frag_shad
 include_directories(src)
 include_directories(third_party)
 
+
 add_library(hrl STATIC
         #third-party
         third_party/glad/glad.c
@@ -39,16 +47,17 @@ add_library(hrl STATIC
         src/hrl.cpp
         ${EMBEDDED_SOURCES}
 
+        #core
+        src/core/utils_functions.cpp
+
         #opengl
         src/backend/opengl33/gl33_backend.cpp
         src/backend/opengl33/gl33_renderer.cpp
         src/backend/opengl33/gl33_shader.cpp
+        src/backend/opengl33/gl33_texture.cpp
 )
 
 
 #link OpenGL
-if(WIN32)
-    target_link_libraries(hrl PRIVATE opengl32)
-elseif(UNIX)
-    target_link_libraries(hrl PRIVATE libGL.so)
-endif()
+find_package(OpenGL REQUIRED)
+target_link_libraries(hrl PRIVATE OpenGL::GL)
