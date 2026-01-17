@@ -51,7 +51,7 @@ int GL33_Texture::GL33_Create(const HRL_uint _type, const char* _imageContent, c
   // Convertir std::vector<char>::data() en unsigned char* et sa taille en int
   unsigned char* data = stbi_load_from_memory(
     (stbi_uc const*)_imageContent,        //Pointeur vers les données
-    _imageSize,            //Taille totale du tampon
+    (int)_imageSize,            //Taille totale du tampon
     &width_,
     &height_,
     &nr_channels_,
@@ -65,6 +65,8 @@ int GL33_Texture::GL33_Create(const HRL_uint _type, const char* _imageContent, c
 
     //on libere la mémoire allouée par stb
     stbi_image_free(data);
+
+    return 0;
   }
   else
   {
@@ -75,6 +77,8 @@ int GL33_Texture::GL33_Create(const HRL_uint _type, const char* _imageContent, c
 
     //on libere la mémoire allouée par stb (normalement c'est pas nécéssaire mais on le fait quand meme)
     stbi_image_free(data);
+
+    return -1;
   }
 }
 
@@ -88,6 +92,11 @@ void GL33_Texture::Bind()
   //on bind le bon slot opengl
   glActiveTexture(glSlots[type_]);
   glBindTexture(GL_TEXTURE_2D, glID_);
+}
+
+HRL_uint GL33_Texture::GetType() const
+{
+  return type_;
 }
 
 HRL_uint GL33_Texture::GetWidth() const

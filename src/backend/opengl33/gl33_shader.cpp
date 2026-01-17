@@ -10,13 +10,22 @@
 //pour glm::value_ptr
 #include <glm/gtc/type_ptr.hpp>
 
+#define DEBUG_MSG() printf("[DEBUG] %s:%d\n", __FILE__, __LINE__)
+
 int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize)
 {
+
+  DEBUG_MSG();
   //id des shaders
   unsigned int vertex, fragment;
 
+  //on passe un tableau de pointeurs
+  const GLchar* vertsrc = _vertContent;
+  const GLchar* fragsrc = _vertContent;
+
   vertex = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertex, 1, (GLchar* const*)_vertContent, nullptr);
+
+  glShaderSource(vertex, 1, &vertsrc, nullptr);
   glCompileShader(vertex);
 
   GLint success;
@@ -26,12 +35,14 @@ int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const c
   {
     glGetShaderInfoLog(vertex, 512, nullptr, infoLog);
     SetErrorCode("Vertex Compilation Failed : ");
+    glDeleteShader(vertex);
     return -1;
   }
 
   //creation et compilation du fragment shader
   fragment = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragment, 1, (GLchar* const*)_fragContent, nullptr);
+
+  glShaderSource(vertex, 1, &fragsrc, nullptr);
   glCompileShader(fragment);
 
   glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
@@ -39,6 +50,7 @@ int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const c
   {
     glGetShaderInfoLog(fragment, 512, nullptr, infoLog);
     SetErrorCode("Fragment Compilation Failed : ");
+    glDeleteShader(fragment);
     return -1;
   }
 
@@ -54,12 +66,31 @@ int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const c
   {
     glGetProgramInfoLog(id, 512, nullptr, infoLog);
     SetErrorCode("Shader Program Failed : ");
+    glDeleteProgram(id);
     return -1;
   }
 
   //nettoyage des shaders intermediaires (une fois liées dans un programme, elles ne sont plus nécéssaires individuellement)
   glDeleteShader(vertex);
   glDeleteShader(fragment);
+
+  //On set tous les uniforms constants de texture (albedo -> 0, normal -> 1, etc...)
+  glUseProgram(id);
+  glUniform1i(FindUniformLocation("Albedo"), 0);
+  glUniform1i(FindUniformLocation("Normal"), 1);
+  glUniform1i(FindUniformLocation("Specular"), 2);
+  glUniform1i(FindUniformLocation("Roughness"), 3);
+  glUniform1i(FindUniformLocation("Metalic"), 4);
+  glUniform1i(FindUniformLocation("Alpha"), 5);
+  glUniform1i(FindUniformLocation("ShadowMap"), 6);
+  glUniform1i(FindUniformLocation("CubeMap"), 7);
+  glUniform1i(FindUniformLocation("TexCustom0"), 8);
+  glUniform1i(FindUniformLocation("TexCustom1"), 9);
+  glUniform1i(FindUniformLocation("TexCustom2"), 10);
+  glUniform1i(FindUniformLocation("TexCustom3"), 11);
+  glUniform1i(FindUniformLocation("TexCustom4"), 12);
+  glUniform1i(FindUniformLocation("TexCustom5"), 13);
+  glUniform1i(FindUniformLocation("TexCustom6"), 14);
 
   return 0;
 }

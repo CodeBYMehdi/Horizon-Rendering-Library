@@ -11,6 +11,14 @@ uniform sampler2D Roughness;
 uniform sampler2D Metalic;
 uniform sampler2D Alpha;
 uniform sampler2D ShadowMap;
+uniform sampler2D CubeMap;
+uniform sampler2D TexCustom0;
+uniform sampler2D TexCustom1;
+uniform sampler2D TexCustom2;
+uniform sampler2D TexCustom3;
+uniform sampler2D TexCustom4;
+uniform sampler2D TexCustom5;
+uniform sampler2D TexCustom6;
 
 uniform vec3 TintColor;
 

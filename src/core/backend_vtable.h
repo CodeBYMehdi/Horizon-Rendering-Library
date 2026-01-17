@@ -11,8 +11,10 @@ typedef struct {
 	void(*RHI_InitContext)(HRL_uint width, HRL_uint height, void* loader);
 	void(*RHI_Shutdown)();
 
-	//Draw//
+	//Draw & batching//
 	void(*RHI_BeginFrame)();
+	void(*RHI_BindMaterial)(HRL_Material* mat);
+
 
 	//Window//
 	void(*RHI_WindowResizeCallback)(int width, int height);

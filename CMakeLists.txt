@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.31)
 project(hrl)
 
-#C++ 20 Minimum
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+
+find_package(Python REQUIRED)
 
 #creer le fichier generated dans le fichier cmake
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/generated)
@@ -44,8 +43,10 @@ add_library(hrl STATIC
         #third-party
         third_party/glad/glad.c
 
-        src/hrl.cpp
+        #fichiers ressources générés
         ${EMBEDDED_SOURCES}
+
+        src/hrl.cpp
 
         #core
         src/core/utils_functions.cpp

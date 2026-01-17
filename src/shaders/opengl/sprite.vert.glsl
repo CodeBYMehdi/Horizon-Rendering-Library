@@ -1,13 +1,17 @@
 #version 330 core
 
+//vertex/point
 layout(location = 0) in vec2 apos;
 layout(location = 1) in vec2 auv;
 
-out vec2 uv;
-
+//entité/objet
 uniform mat4 model;
+
+//vue/ecran
 uniform mat4 view;
 uniform mat4 projection;
+
+out vec2 uv;
 
 void main()
 {

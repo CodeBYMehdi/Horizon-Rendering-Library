@@ -13,6 +13,7 @@ class GL33_Shader final {
 public:
   GL33_Shader()=default;
 
+  //retourne 0 pour pas d'erreur et -1 pour erreur
   int GL33_Create(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize);
 
   ~GL33_Shader();

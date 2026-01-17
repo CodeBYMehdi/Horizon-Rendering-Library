@@ -10,11 +10,13 @@ class GL33_Texture final {
 public:
   GL33_Texture()=default;
 
+  //retourne 0 pour pas d'erreur et -1 pour erreur
   int GL33_Create(const HRL_uint _type, const char* _imageContent, const size_t _imageSize);
 
   ~GL33_Texture();
 
   void Bind();
+  HRL_uint GetType() const;
 
   HRL_uint GetWidth() const;
   HRL_uint GetHeight() const;

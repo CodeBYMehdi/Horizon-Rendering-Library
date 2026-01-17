@@ -13,4 +13,7 @@ void SetErrorCode(const std::string& e);
 
 HRL_id GenerateHRL_ID();
 
+unsigned int GetWindowWidth();
+unsigned int GetWindowHeight();
+
 #endif

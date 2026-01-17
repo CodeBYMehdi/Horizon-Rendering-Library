@@ -5,7 +5,11 @@
 #ifndef HRL_IMPL
 #define HRL_IMPL
 
-#include <stdint.h>
+#ifdef __cplusplus
+ #include <cstdint>
+#else
+ #include <stdint.h>
+#endif
 
 //ajouter des debug views (genre activer que l'albedo ou que la normal, montrer la lumiere, les reflections, etc)
 //suport multiviewport (avec HRL_CreateViewport et tout) (toujours 1 camera de rendu par viewport)

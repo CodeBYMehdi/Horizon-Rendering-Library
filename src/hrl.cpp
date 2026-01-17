@@ -20,6 +20,11 @@ static HRL_vtable g_Backend;
 std::string lastErrorCode;
 
 
+//variables fenetre
+unsigned int window_width_;
+unsigned int window_height_;
+
+
 //objects//
 static std::unordered_map<HRL_id, HRL_Mesh*> meshes_;
 static std::unordered_map<HRL_id, HRL_Material*> materials_;
@@ -73,6 +78,8 @@ void HRL_Init(HRL_uint _api)
 
 void HRL_InitContext(HRL_uint _width, HRL_uint _height, void* _loader)
 {
+	window_width_ = _width;
+	window_height_ = _height;
 	g_Backend.RHI_InitContext(_width, _height, _loader);
 }
 
@@ -106,6 +113,8 @@ void HRL_EndFrame()
 
 void HRL_WindowResizeCallback(int _width, int _height)
 {
+	window_width_ = _width;
+	window_height_ = _height;
 }
 
 
@@ -214,6 +223,7 @@ void HRL_SetMeshScale(HRL_id _meshid, float x, float y, float z)
 
 HRL_id HRL_CreateLight(HRL_uint _type)
 {
+	return HRL_InvalidID;
 }
 void HRL_DeleteLight(HRL_id _lightid)
 {
@@ -253,6 +263,7 @@ void HRL_DeleteTexture(HRL_id _textureid)
 //Post Process//
 HRL_id HRL_CreatePostProcess(HRL_id _matid)
 {
+	return HRL_InvalidID;
 }
 void HRL_DeletePostProcess(HRL_id _postid)
 {
