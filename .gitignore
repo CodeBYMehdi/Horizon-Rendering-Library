@@ -20,7 +20,9 @@ out/
 [Dd]ebug*/
 [Rr]elease*/
 cmake-build-debug/
+cmake-build-debug-mingw/
 cmake-build-release/
+cmake-build-release-mingw/
 x64/
 *.exe
 *.dll
