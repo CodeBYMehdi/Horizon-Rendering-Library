@@ -1,3 +1,11 @@
+# Note
+This project was developed by a single passionate developer. While I’ve tried to make everything work smoothly, but there may still be bugs.
+If you encounter any issues or have suggestions, please feel free to contact me at: oscarsoirey.contact@gmail.com
+Thank you for your support and understanding!
+
+---
+
+
 # HRL Engine
 
 HRL is a high quality, multi-API rendering engine made for professional use. It supports OpenGL, Vulkan, DirectX, Metal, and modern consoles (NVN, GNM).
