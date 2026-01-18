@@ -33,10 +33,10 @@ It provides a simple C/C++ API to manage meshes, lights, textures, shaders, mate
 
 ## Installation
 
-Include `HRL.h` in your file:
+Include `hrl.h` in your file:
 
 ```c
-#include "HRL.h"
+#include "hrl.h"
 ```
 
 ## Initialization
