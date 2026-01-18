@@ -1,5 +1,21 @@
 /**
+ * Copyright (c) 2026 Oscar Soirey
+ * https://github.com/oscar-soirey/Horizon-Rendering-Library
  *
+ * This code is the intellectual property of Oscar Soirey and is
+ * licensed under the Apache License, Version 2.0. You may not use,
+ * modify, or distribute this software except in compliance with the
+ * License. A copy of the License can be obtained at:
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * By using or modifying this code, you agree to adhere to the terms
+ * of the Apache 2.0 License.
+ * 
+ *    ,--.  ,--.,------. ,--.
+ *    |  '--'  ||  .--. '|  |
+ *    |  .--.  ||  '--'.'|  |
+ *    |  |  |  ||  |\  \ |  '--.
+ *    `--'  `--'`--' '--'`-----'
  */
 
 #ifndef HRL_IMPL
@@ -7,8 +23,10 @@
 
 #ifdef __cplusplus
  #include <cstdint>
+ #include <iostream>
 #else
  #include <stdint.h>
+ #include <stdio.h>
 #endif
 
 //ajouter des debug views (genre activer que l'albedo ou que la normal, montrer la lumiere, les reflections, etc)
@@ -78,6 +96,11 @@ typedef unsigned int HRL_uint;
 #define HRL_Mesh3DShader								(UINT32_MAX - 2)
 
 
+/**
+ * Definitions : 
+ * Roll : X, Pitch : Y, Yaw : Z
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -119,7 +142,7 @@ extern "C" {
 	 */
 	void HRL_SetMeshMaterial(HRL_id _meshid, HRL_id _matid);
 	void HRL_SetMeshLocation(HRL_id _meshid, float x, float y, float z);
-	void HRL_SetMeshRotation(HRL_id _meshid, float yaw, float pitch, float roll);
+	void HRL_SetMeshRotation(HRL_id _meshid, float roll, float pitch, float yaw);
 	void HRL_SetMeshScale(HRL_id _meshid, float x, float y, float z);
 
 
@@ -139,7 +162,7 @@ extern "C" {
 	void HRL_SetLightAttenuation(HRL_id _lightid, float a);
 
 	void HRL_SetLightLocation(HRL_id _lightid, float x, float y, float z);
-	void HRL_SetLightRotation(HRL_id _lightid, float yaw, float pitch, float roll);
+	void HRL_SetLightRotation(HRL_id _lightid, float roll, float pitch, float yaw);
 
 
 	//Textures
@@ -213,7 +236,7 @@ extern "C" {
 	void HRL_SetCameraOrthoVertical(HRL_id _viewportid, float _height);
 	void HRL_SetCameraPerspectiveFov(HRL_id _viewportid, float _fov);
 	void HRL_SetCameraPosition(HRL_id _viewportid, float x, float y, float z);
-	void HRL_SetCameraRotation(HRL_id _viewportid, float yaw, float pitch, float roll);
+	void HRL_SetCameraRotation(HRL_id _viewportid, float roll, float pitch, float yaw);
 
 
 #ifdef __cplusplus
@@ -222,9 +245,16 @@ extern "C" {
 
 
 //macros
-//concatenation fausse!
+#ifdef __cplusplus  // C++
+ #define HRL_CheckErrors() \
+  std::cout << HRL_GetLastError() << " " << __FILE__ << " " << __LINE__ << std::endl;
+
+#else // C
 #define HRL_CheckErrors() \
-	printf(HRL_GetLastError() + __FILE__ + __LINE__)
+	printf("%s %s %d\n", HRL_GetLastError(), __FILE__, __LINE__)
+
+#endif
+
 
 
 #endif //HRL_IMPL

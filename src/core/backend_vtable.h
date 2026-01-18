@@ -13,6 +13,10 @@ typedef struct {
 
 	//Draw & batching//
 	void(*RHI_BeginFrame)();
+
+	//Bind Viewport appeller avant les autres binds et draw car il définit la camera!
+	void(*RHI_BindViewport)(HRL_Viewport* viewport);
+
 	void(*RHI_BindMaterial)(HRL_Material* mat);
 
 

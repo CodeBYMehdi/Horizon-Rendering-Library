@@ -8,6 +8,7 @@
 #include "../hrl.h"
 
 #include <string>
+#include <glm/glm.hpp>
 
 void SetErrorCode(const std::string& e);
 
@@ -15,5 +16,10 @@ HRL_id GenerateHRL_ID();
 
 unsigned int GetWindowWidth();
 unsigned int GetWindowHeight();
+
+//Rappel : Roll : X, Pitch: Y, Yaw : Z
+glm::vec3 GetForwardVector(glm::vec3 _rotation);
+glm::vec3 GetRightVector(glm::vec3 _rotation);
+glm::vec3 GetUpVector(glm::vec3 _rotation);
 
 #endif

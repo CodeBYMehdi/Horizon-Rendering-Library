@@ -9,6 +9,8 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 //debug printf
 #include <cstdio>
@@ -138,6 +140,13 @@ void GL33_BeginFrame()
   glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
+static HRL_Camera* currentCamera;
+void GL33_BindViewport(HRL_Viewport* viewport)
+{
+  glViewport(viewport->x_, viewport->y_, viewport->width_, viewport->height_);
+  currentCamera = viewport->camera_;
+}
+
 
 void GL33_BindMaterial(HRL_Material* mat)
 {
@@ -152,7 +161,19 @@ void GL33_BindMaterial(HRL_Material* mat)
     auto* s = it->second;
     s->Use();
 
-    s->SetMat4("view", );
+    //ajouter la taille du viewport courant dans l'aspect
+    //taille de l'ecran et fov de la camera
+    float aspect = (float)GetWindowWidth() / (float)GetWindowHeight();
+    glm::mat4 proj = glm::perspective(glm::radians(currentCamera->value_), aspect, currentCamera->near_plane_, currentCamera->far_plane_);
+    s->SetMat4("projection", proj);
+
+    //position et vue de la camera
+    glm::mat4 view = glm::lookAt(
+      currentCamera->position_,
+      currentCamera->position_ + GetForwardVector(currentCamera->rotation_),
+      GetUpVector(currentCamera->rotation_)
+    );
+    s->SetMat4("view", view);
 
     //on passe tous les uniforms donnés par l'utilisateur
     for (auto [name, value] : mat->intParams_)

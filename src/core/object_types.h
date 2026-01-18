@@ -50,6 +50,17 @@ typedef struct {
   glm::vec3 rotation_;
 
   float value_;
+  float near_plane_;
+  float far_plane_;
 }HRL_Camera;
+
+typedef struct {
+  HRL_Camera* camera_;
+
+  float x_;
+  float y_;
+  float width_;
+  float height_;
+}HRL_Viewport;
 
 #endif
