@@ -35,13 +35,12 @@ unsigned int GetWindowHeight()
 }
 
 
-//Rappel : Roll : X, Pitch: Y, Yaw : Z
 glm::vec3 GetForwardVector(glm::vec3 _rot)
 {
   glm::vec3 forward;
-  forward.x = cos(glm::radians(_rot.y)) * cos(glm::radians(_rot.z));
-  forward.y = sin(glm::radians(_rot.y));
-  forward.z = cos(glm::radians(_rot.y)) * sin(glm::radians(_rot.z));
+  forward.x = cos(glm::radians(_rot.x)) * cos(glm::radians(_rot.y));
+  forward.y = sin(glm::radians(_rot.x));
+  forward.z = cos(glm::radians(_rot.x)) * sin(glm::radians(_rot.y));
   return glm::normalize(forward);
 }
 

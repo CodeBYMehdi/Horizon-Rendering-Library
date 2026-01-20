@@ -222,8 +222,9 @@ extern "C" {
 	 * [0,0] ----- [1,0]
 	 * [0,1] ----- [1,1]
 	 */
-	HRL_id HRL_CreateWiewport(float x, float y, float _width, float _height);
+	HRL_id HRL_CreateViewport(HRL_id _cameraid, float x, float y, float _width, float _height);
 	void HRL_DeleteViewport(HRL_id _viewportid);
+	void HRL_SetViewportCamera(HRL_id _viewportid, HRL_id _camid);
 	void HRL_SetViewportRect(HRL_id _viewportid, float x, float y, float _width, float _height);
 
 
@@ -233,19 +234,22 @@ extern "C" {
 	 * @param _viewportid Id of the viewport (wich includes the camera) (default viewport id = 0)
 	 * @param _type HRL_Ortho, HRL_Perspective
 	 */
-	void HRL_SetCameraType(HRL_id _viewportid, HRL_uint _type);
-	void HRL_SetCameraOrthoVertical(HRL_id _viewportid, float _height);
-	void HRL_SetCameraPerspectiveFov(HRL_id _viewportid, float _fov);
+	HRL_id HRL_CreateCamera(HRL_uint _type);
+	void HRL_DeleteCamera(HRL_id _camid);
 
-	void HRL_SetCameraNearPlane(HRL_id _viewportid, float _nearPlane);
-	void HRL_SetCameraFarPlane(HRL_id _viewportid, float _farPlane);
+	void HRL_SetCameraType(HRL_id _camid, HRL_uint _type);
+	void HRL_SetCameraOrthoVertical(HRL_id _camid, float _height);
+	void HRL_SetCameraPerspectiveFov(HRL_id _camid, float _fov);
 
-	void HRL_SetCameraPosition(HRL_id _viewportid, float x, float y, float z);
+	void HRL_SetCameraNearPlane(HRL_id _camid, float _nearPlane);
+	void HRL_SetCameraFarPlane(HRL_id _camid, float _farPlane);
+
+	void HRL_SetCameraPosition(HRL_id _camid, float x, float y, float z);
 	/**
 	 * Backend information :
 	 * Roll : X, Pitch : Y, Yaw : Z
 	 */
-	void HRL_SetCameraRotation(HRL_id _viewportid, float roll, float pitch, float yaw);
+	void HRL_SetCameraRotation(HRL_id _camid, float roll, float pitch, float yaw);
 
 
 #ifdef __cplusplus

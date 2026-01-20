@@ -29,11 +29,12 @@ unsigned int window_height_;
 static std::unordered_map<HRL_id, HRL_Mesh*> meshes_;
 static std::unordered_map<HRL_id, HRL_Material*> materials_;
 static std::unordered_map<HRL_id, HRL_Viewport*> viewports_;
+static std::unordered_map<HRL_id, HRL_Camera*> cameras_;
 
 
 void HRL_Init(HRL_uint _api)
 {
-	//Create viewport 0 :
+	//Create camera and viewport 0 :
 	auto* cam = new HRL_Camera(
 		//type, position, rotation
 		HRL_Ortho,
@@ -45,6 +46,8 @@ void HRL_Init(HRL_uint _api)
 		0.01f,
 		1000.f
 	);
+	cameras_.emplace(0, cam);
+
 	auto* viewport0 = new HRL_Viewport(cam, 0, 0, 1, 1);
 	viewports_.emplace(0, viewport0);
 
@@ -116,10 +119,15 @@ void HRL_Shutdown()
 
 	for (const auto& [id, viewport] : viewports_)
 	{
-		delete viewport->camera_;
 		delete viewport;
 	}
 	viewports_.clear();
+
+	for (const auto& [id, camera] : cameras_)
+	{
+		delete camera;
+	}
+	cameras_.clear();
 
 	g_Backend.RHI_Shutdown();
 }
@@ -132,20 +140,23 @@ void HRL_BeginFrame()
 void HRL_EndFrame()
 {
 	//appels à RHI_DrawMesh, HRI_BindMaterial, etc...
-	g_Backend.RHI_BindViewport(viewports_[0]);
-
-	for (const auto& [id, mesh] : meshes_)
+	for (const auto& [id, viewport] : viewports_)
 	{
-		auto mat_it = materials_.find(mesh->material_);
-		if (mat_it == materials_.end())
-		{
-			//si on trouve pas le material, on passe l'iteration de la boucle
-			lastErrorCode = "Tried to draw mesh : material not found";
-			continue;
-		}
-		g_Backend.RHI_BindMaterial(mat_it->second);
+		g_Backend.RHI_BindViewport(viewport);
 
-		g_Backend.RHI_DrawMesh(mesh);
+		for (const auto& [id, mesh] : meshes_)
+		{
+			auto mat_it = materials_.find(mesh->material_);
+			if (mat_it == materials_.end())
+			{
+				//si on trouve pas le material, on passe l'iteration de la boucle
+				lastErrorCode = "Tried to draw mesh : material not found";
+				continue;
+			}
+			g_Backend.RHI_BindMaterial(mat_it->second);
+
+			g_Backend.RHI_DrawMesh(mesh);
+		}
 	}
 }
 
@@ -213,7 +224,6 @@ void HRL_SetMeshMaterial(HRL_id _meshid, HRL_id _matid)
 	if (it == meshes_.end())
 	{
 		lastErrorCode = "HRL_SetMeshMaterial, invalid ID";
-		return;
 	}
 	else
 	{
@@ -227,7 +237,6 @@ void HRL_SetMeshLocation(HRL_id _meshid, float x, float y, float z)
 	if (it == meshes_.end())
 	{
 		lastErrorCode = "HRL_SetMeshLocation, invalid ID";
-		return;
 	}
 	else
 	{
@@ -235,17 +244,17 @@ void HRL_SetMeshLocation(HRL_id _meshid, float x, float y, float z)
 	}
 }
 
-void HRL_SetMeshRotation(HRL_id _meshid, float yaw, float pitch, float roll)
+void HRL_SetMeshRotation(HRL_id _meshid, float roll, float pitch, float yaw)
 {
 	auto it = meshes_.find(_meshid);
 	if (it == meshes_.end())
 	{
 		lastErrorCode = "HRL_SetMeshRotation, invalid ID";
-		return;
 	}
 	else
 	{
-		it->second->rotation_ = glm::vec3(yaw, pitch, roll);
+		//glm attend : X-pitch, Y-yaw, Z-roll.
+		it->second->rotation_ = glm::vec3(pitch, yaw, roll);
 	}
 }
 
@@ -255,7 +264,6 @@ void HRL_SetMeshScale(HRL_id _meshid, float x, float y, float z)
 	if (it == meshes_.end())
 	{
 		lastErrorCode = "HRL_SetMeshScale, invalid ID";
-		return;
 	}
 	else
 	{
@@ -450,25 +458,19 @@ void HRL_MaterialSetVec4(HRL_id _matid, const char* _uniformName, float x, float
 	}
 }
 
-HRL_id HRL_CreateWiewport(float x, float y, float _width, float _height)
+
+
+HRL_id HRL_CreateViewport(HRL_id _cameraid, float x, float y, float _width, float _height)
 {
-	//revoir toute la logique des camera/viewport, la camera doit etre 
-	//créée en dehors du viewport, comme ca deux viewport peuvenet se 
-	//partager la meme view
+	auto it = cameras_.find(_cameraid);
+	if (it == cameras_.end())
+	{
+		lastErrorCode = "HRL_CreateViewport error : invalid ID";
+		return HRL_InvalidID;
+	}
 
-	auto* cam = new HRL_Camera(
-		//type, position, rotation
-		HRL_Ortho,
-		glm::vec3(1.f),
-		glm::vec3(1.f),
-
-		//fov vertical, near plane, far plane
-		1000.f,
-		0.01f,
-		1000.f
-		);
-
-	auto* v = new HRL_Viewport(cam, x, y, _width, _height);
+	//camera valide
+	auto* v = new HRL_Viewport(it->second, x, y, _width, _height);
 
 	HRL_id newId = GenerateHRL_ID();
 	viewports_.emplace(newId, v);
@@ -491,6 +493,25 @@ void HRL_DeleteViewport(HRL_id _viewportid)
 	}
 }
 
+void HRL_SetViewportCamera(HRL_id _viewportid, HRL_id _camid)
+{
+	auto viewport_it = viewports_.find(_viewportid);
+	if (viewport_it == viewports_.end())
+	{
+		lastErrorCode = "HRL_SetViewportCamera error : invalid Viewport ID";
+		return;
+	}
+
+	auto cam_it = cameras_.find(_camid);
+	if (cam_it == cameras_.end())
+	{
+		lastErrorCode = "HRL_CreateViewport error : invalid Camera ID";
+		return;
+	}
+
+	viewport_it->second->camera_ = cam_it->second;
+}
+
 void HRL_SetViewportRect(HRL_id _viewportid, float x, float y, float _width, float _height)
 {
 	auto it = viewports_.find(_viewportid);
@@ -502,39 +523,79 @@ void HRL_SetViewportRect(HRL_id _viewportid, float x, float y, float _width, flo
 	else
 	{
 		it->second->x_ = x;
-		it->second->y_ = y; //pour que 0 soit en haut
+		it->second->y_ = y;
 		it->second->width_= _width;
 		it->second->height_= _height;
 	}
 }
 
-void HRL_SetCameraType(HRL_id _viewportid, HRL_uint _type)
+
+
+HRL_id HRL_CreateCamera(HRL_uint _type)
 {
-	auto it = viewports_.find(_viewportid);
-	if (it == viewports_.end())
+	if (_type == HRL_Ortho || _type == HRL_Perspective)
 	{
-		lastErrorCode = "HRL_SetCameraView, invalid ID";
-		return;
+		auto* cam = new HRL_Camera(
+			//type, position, rotation
+			_type,
+			glm::vec3(1.f),
+			glm::vec3(1.f),
+
+			//fov vertical, near plane, far plane
+			1000.f,
+			0.01f,
+			1000.f
+			);
+		HRL_id newId = GenerateHRL_ID();
+		cameras_.emplace(newId, cam);
+		return newId;
 	}
 	else
 	{
-		it->second->camera_->type_ = _type;
+		return HRL_InvalidID;
 	}
 }
 
-void HRL_SetCameraOrthoVertical(HRL_id _viewportid, float _height)
+void HRL_DeleteCamera(HRL_id _camid)
 {
-	auto it = viewports_.find(_viewportid);
-	if (it == viewports_.end())
+	auto it = cameras_.find(_camid);
+	if (it == cameras_.end())
+	{
+		lastErrorCode = "HRL_DeleteCamera error : invalid ID";
+	}
+	else
+	{
+		delete it->second;
+	}
+}
+
+
+void HRL_SetCameraType(HRL_id _camid, HRL_uint _type)
+{
+	auto it = cameras_.find(_camid);
+	if (it == cameras_.end())
+	{
+		lastErrorCode = "HRL_SetCameraView, invalid ID";
+	}
+	else
+	{
+		it->second->type_ = _type;
+	}
+}
+
+void HRL_SetCameraOrthoVertical(HRL_id _camid, float _height)
+{
+	auto it = cameras_.find(_camid);
+	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraOrthoVertical, invalid ID";
 		return;
 	}
 	else
 	{
-		if (it->second->camera_->type_ == HRL_Ortho)
+		if (it->second->type_ == HRL_Ortho)
 		{
-			it->second->camera_->value_ = _height;
+			it->second->value_ = _height;
 		}
 		else
 		{
@@ -543,19 +604,19 @@ void HRL_SetCameraOrthoVertical(HRL_id _viewportid, float _height)
 	}
 }
 
-void HRL_SetCameraPerspectiveFov(HRL_id _viewportid, float _fov)
+void HRL_SetCameraPerspectiveFov(HRL_id _camid, float _fov)
 {
-	auto it = viewports_.find(_viewportid);
-	if (it == viewports_.end())
+	auto it = cameras_.find(_camid);
+	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraPerspectiveFov, invalid ID";
 		return;
 	}
 	else
 	{
-		if (it->second->camera_->type_ == HRL_Perspective)
+		if (it->second->type_ == HRL_Perspective)
 		{
-			it->second->camera_->value_ = _fov;
+			it->second->value_ = _fov;
 		}
 		else
 		{
@@ -564,58 +625,58 @@ void HRL_SetCameraPerspectiveFov(HRL_id _viewportid, float _fov)
 	}
 }
 
-void HRL_SetCameraNearPlane(HRL_id _viewportid, float _nearPlane)
+void HRL_SetCameraNearPlane(HRL_id _camid, float _nearPlane)
 {
-	auto it = viewports_.find(_viewportid);
-	if (it == viewports_.end())
+	auto it = cameras_.find(_camid);
+	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraNearPlane, invalid ID";
 		return;
 	}
 	else
 	{
-		it->second->camera_->near_plane_ = _nearPlane;
+		it->second->near_plane_ = _nearPlane;
 	}
 }
 
-void HRL_SetCameraFarPlane(HRL_id _viewportid, float _farPlane)
+void HRL_SetCameraFarPlane(HRL_id _camid, float _farPlane)
 {
-	auto it = viewports_.find(_viewportid);
-	if (it == viewports_.end())
+	auto it = cameras_.find(_camid);
+	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraFarPlane, invalid ID";
 		return;
 	}
 	else
 	{
-		it->second->camera_->far_plane_ = _farPlane;
+		it->second->far_plane_ = _farPlane;
 	}
 }
 
-void HRL_SetCameraPosition(HRL_id _viewportid, float x, float y, float z)
+void HRL_SetCameraPosition(HRL_id _camid, float x, float y, float z)
 {
-	auto it = viewports_.find(_viewportid);
-	if (it == viewports_.end())
+	auto it = cameras_.find(_camid);
+	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraPosition, invalid ID";
 		return;
 	}
 	else
 	{
-		it->second->camera_->position_ = glm::vec3(x, y, z);
+		it->second->position_ = glm::vec3(x, y, z);
 	}
 }
 
-void HRL_SetCameraRotation(HRL_id _viewportid, float roll, float pitch, float yaw)
+void HRL_SetCameraRotation(HRL_id _camid, float roll, float pitch, float yaw)
 {
-	auto it = viewports_.find(_viewportid);
-	if (it == viewports_.end())
+	auto it = cameras_.find(_camid);
+	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraRotation, invalid ID";
 		return;
 	}
 	else
 	{
-		it->second->camera_->rotation_ = glm::vec3(roll, pitch, yaw);
+		it->second->rotation_ = glm::vec3(roll, pitch, yaw);
 	}
 }

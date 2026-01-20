@@ -174,22 +174,44 @@ int main()
   //on ouvre la texture
   size_t texSize;
   std::string texString = OpenFile("canada.jpg", &texSize);
-
   //crée la texture et le material
   HRL_id tex = HRL_CreateTexture(HRL_Tex_Albedo, texString.c_str(), texSize);
-
+  //material
   HRL_id mat = HRL_CreateMaterial(HRL_SpriteShader);
   HRL_MaterialSetTexture(mat, "Albedo", tex);
 
+  //mesh 1 : canada flag
   HRL_id sprite = HRL_CreateMesh(HRL_Sprite);
   HRL_SetMeshMaterial(sprite, mat);
   HRL_SetMeshScale(sprite, 100, 100, 100);
 
+  //Mesh 2 : portugal flag
+  float ptZRot = 0.f; //pour faire tourner le sprite
+
+  size_t ptSize;
+  std::string ptString = OpenFile("portugal.jpg", &ptSize);
+  HRL_id ptTex = HRL_CreateTexture(HRL_Tex_Albedo, ptString.c_str(), ptSize);
+  HRL_id ptMat = HRL_CreateMaterial(HRL_SpriteShader);
+  HRL_MaterialSetTexture(ptMat, "Albedo", ptTex);
+  HRL_id sprite2 = HRL_CreateMesh(HRL_Sprite);
+  HRL_SetMeshMaterial(sprite2, ptMat);
+  HRL_SetMeshScale(sprite2, 80, 80, 80);
+
+
+  //viewport 0 (default) (uses by default camera id 0)
+  HRL_SetViewportRect(0,0.f,0.f,1.f, 0.5f);
+
+  //camera 0 (default)
   HRL_SetCameraType(0, HRL_Perspective);
-  HRL_SetCameraPerspectiveFov(0, 60.f);
+  HRL_SetCameraPerspectiveFov(0, 40.f);
   HRL_SetCameraFarPlane(0, 10000.f);
 
-  HRL_SetViewportRect(0,0,0,0.4f, 0.4f);
+  //other camera and viewport
+  HRL_id cam1 = HRL_CreateCamera(HRL_Perspective);
+  HRL_SetCameraPerspectiveFov(cam1, 130.f);
+  HRL_id viewport = HRL_CreateViewport(cam1, 0.f, 0.5f, 1.f, 0.5f);
+
+
 
 
   //laisser
@@ -218,6 +240,12 @@ int main()
     ProcessCameraRotation(win);
     HRL_SetCameraPosition(0, camX, camY, camZ);
     HRL_SetCameraRotation(0, 0.f, pitch, yaw);
+
+    HRL_SetCameraPosition(cam1, camX, camY, camZ);
+    HRL_SetCameraRotation(cam1, 0.f, pitch, yaw);
+
+    ptZRot += 1.f * (float)dt;
+    HRL_SetMeshRotation(sprite2, 0.f, 0.f, ptZRot);
 
     //debug keys
     if (glfwGetKey(win, GLFW_KEY_ESCAPE) == GLFW_PRESS)

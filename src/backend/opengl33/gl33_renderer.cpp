@@ -168,6 +168,7 @@ static GL33_Shader* currentShader;
 void GL33_BindViewport(HRL_Viewport* viewport)
 {
   glViewport((GLint)(viewport->x_*(float)GetWindowWidth()),
+    //pour que 0 soit le haut et 1 le bas
     (GLint)((1 - viewport->y_ - viewport->height_)*(float)GetWindowHeight()),
     (GLint)(viewport->width_ * (float)GetWindowWidth()),
     (GLint)(viewport->height_ * (float)GetWindowHeight()));
