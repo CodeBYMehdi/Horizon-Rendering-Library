@@ -1,6 +1,12 @@
 /**
- * Copyright (c) 2026 Oscar Soirey
+ * Copyright (c) 2025-2026 Oscar Soirey
  * https://github.com/oscar-soirey/Horizon-Rendering-Library
+ *
+ * This project was developed by a single passionate developer.
+ * I�ve tried to make everything work smoothly, but there may still be bugs.
+ * If you encounter any issues or have suggestions, please feel free to contact me at:
+ * oscarsoirey.contact@gmail.com
+ * Thank you for your support and understanding
  *
  * This code is the intellectual property of Oscar Soirey and is
  * licensed under the Apache License, Version 2.0. You may not use,
@@ -10,7 +16,7 @@
  *
  * By using or modifying this code, you agree to adhere to the terms
  * of the Apache 2.0 License.
- * 
+ *
  *    ,--.  ,--.,------. ,--.
  *    |  '--'  ||  .--. '|  |
  *    |  .--.  ||  '--'.'|  |
@@ -96,11 +102,6 @@ typedef unsigned int HRL_uint;
 #define HRL_Mesh3DShader								(UINT32_MAX - 2)
 
 
-/**
- * Definitions : 
- * Roll : X, Pitch : Y, Yaw : Z
- */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -169,7 +170,7 @@ extern "C" {
 	/**
 	 * @brief Supported extensions : png, jpeg, jpg, bmp, tga, gif (single image), hdr, psd (half)
 	 * To have more information, you can visit the stb website
-	 * @param _type HRL_Tex_Albedo, HRL_Tex_Normal, HRL_Tex_Specular, 
+	 * @param _type HRL_Tex_Albedo, HRL_Tex_Normal, HRL_Tex_Specular,
 	 * HRL_Tex_Roughness, HRL_Tex_Metalic, HRL_Tex_Alpha, HRL_Tex_ShadowMap
 	 * @param _fileContent content of the file (supported extensions) (opened in binary mode)
 	 * @return HRL_id of the new object
@@ -232,10 +233,18 @@ extern "C" {
 	 * @param _viewportid Id of the viewport (wich includes the camera) (default viewport id = 0)
 	 * @param _type HRL_Ortho, HRL_Perspective
 	 */
-	void HRL_SetCameraView(HRL_id _viewportid, HRL_uint _type);
+	void HRL_SetCameraType(HRL_id _viewportid, HRL_uint _type);
 	void HRL_SetCameraOrthoVertical(HRL_id _viewportid, float _height);
 	void HRL_SetCameraPerspectiveFov(HRL_id _viewportid, float _fov);
+
+	void HRL_SetCameraNearPlane(HRL_id _viewportid, float _nearPlane);
+	void HRL_SetCameraFarPlane(HRL_id _viewportid, float _farPlane);
+
 	void HRL_SetCameraPosition(HRL_id _viewportid, float x, float y, float z);
+	/**
+	 * Backend information :
+	 * Roll : X, Pitch : Y, Yaw : Z
+	 */
 	void HRL_SetCameraRotation(HRL_id _viewportid, float roll, float pitch, float yaw);
 
 
@@ -247,14 +256,13 @@ extern "C" {
 //macros
 #ifdef __cplusplus  // C++
  #define HRL_CheckErrors() \
-  std::cout << HRL_GetLastError() << " " << __FILE__ << " " << __LINE__ << std::endl;
+	std::cout << HRL_GetLastError() << ", " << __FILE__ << ", " << __LINE__ << std::endl
 
 #else // C
 #define HRL_CheckErrors() \
-	printf("%s %s %d\n", HRL_GetLastError(), __FILE__, __LINE__)
+	printf("%s, %s, %d\n", HRL_GetLastError(), __FILE__, __LINE__)
 
 #endif
-
 
 
 #endif //HRL_IMPL

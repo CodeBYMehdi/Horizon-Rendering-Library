@@ -1,10 +1,15 @@
+/**
+ * Ce shader ne supporte pas les caracteres non - ASCII, donc il ne faut pas utiliser les accents,
+ * meme dans les commentaires
+ */
+
 #version 330 core
 
 //vertex/point
 layout(location = 0) in vec2 apos;
 layout(location = 1) in vec2 auv;
 
-//entité/objet
+//entite/objet
 uniform mat4 model;
 
 //vue/ecran
@@ -17,7 +22,7 @@ void main()
 {
     vec4 pos = vec4(apos, 0.0, 1.0);
 
-    //on passe les coordonées uv au fragment
+    //on passe les coordonees uv au fragment
     uv = auv;
 
     //garder cet ordre

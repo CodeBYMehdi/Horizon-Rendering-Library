@@ -11,6 +11,7 @@ void GL33_Shutdown();
 void GL33_BeginFrame();
 void GL33_BindViewport(HRL_Viewport* viewport);
 void GL33_BindMaterial(HRL_Material* mat);
+void GL33_DrawMesh(HRL_Mesh* mesh);
 
 HRL_id GL33_CreateTexture(HRL_uint _type, const char* _imageContent, const size_t _imageSize);
 void GL33_DeleteTexture(HRL_id _id);

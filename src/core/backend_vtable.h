@@ -16,8 +16,9 @@ typedef struct {
 
 	//Bind Viewport appeller avant les autres binds et draw car il définit la camera!
 	void(*RHI_BindViewport)(HRL_Viewport* viewport);
-
 	void(*RHI_BindMaterial)(HRL_Material* mat);
+
+	void(*RHI_DrawMesh)(HRL_Mesh* mesh);
 
 
 	//Window//

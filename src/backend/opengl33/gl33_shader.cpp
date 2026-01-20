@@ -12,16 +12,15 @@
 
 #define DEBUG_MSG() printf("[DEBUG] %s:%d\n", __FILE__, __LINE__)
 
+
 int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize)
 {
-
-  DEBUG_MSG();
   //id des shaders
   unsigned int vertex, fragment;
 
   //on passe un tableau de pointeurs
   const GLchar* vertsrc = _vertContent;
-  const GLchar* fragsrc = _vertContent;
+  const GLchar* fragsrc = _fragContent;
 
   vertex = glCreateShader(GL_VERTEX_SHADER);
 
@@ -34,7 +33,7 @@ int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const c
   if (!success)
   {
     glGetShaderInfoLog(vertex, 512, nullptr, infoLog);
-    SetErrorCode("Vertex Compilation Failed : ");
+    SetErrorCode("Vertex Compilation Failed: " + static_cast<std::string>(infoLog));
     glDeleteShader(vertex);
     return -1;
   }
@@ -42,14 +41,14 @@ int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const c
   //creation et compilation du fragment shader
   fragment = glCreateShader(GL_FRAGMENT_SHADER);
 
-  glShaderSource(vertex, 1, &fragsrc, nullptr);
+  glShaderSource(fragment, 1, &fragsrc, nullptr);
   glCompileShader(fragment);
 
   glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
   if (!success)
   {
     glGetShaderInfoLog(fragment, 512, nullptr, infoLog);
-    SetErrorCode("Fragment Compilation Failed : ");
+    SetErrorCode("Fragment Compilation Failed: " + static_cast<std::string>(infoLog));
     glDeleteShader(fragment);
     return -1;
   }
@@ -65,7 +64,7 @@ int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const c
   if (!success)
   {
     glGetProgramInfoLog(id, 512, nullptr, infoLog);
-    SetErrorCode("Shader Program Failed : ");
+    SetErrorCode("Program link Failed: " + static_cast<std::string>(infoLog));
     glDeleteProgram(id);
     return -1;
   }
@@ -145,5 +144,6 @@ void GL33_Shader::SetMat4(const std::string &name, const glm::mat4 &value)
 GLint GL33_Shader::FindUniformLocation(const std::string &name)
 {
   auto [it, inserted] = uniform_locations_.try_emplace(name, glGetUniformLocation(id, name.c_str()));
+  //printf("name : %s, loc : %d\n", name.c_str(), it->second);
   return it->second;
 }
