@@ -30,9 +30,11 @@ unsigned int window_height_;
 
 //objects//
 static std::unordered_map<HRL_id, HRL_Mesh*> meshes_;
+static std::unordered_map<HRL_id, HRL_Light*> lights_;
 static std::unordered_map<HRL_id, HRL_Material*> materials_;
 static std::unordered_map<HRL_id, HRL_Viewport*> viewports_;
 static std::unordered_map<HRL_id, HRL_Camera*> cameras_;
+static std::unordered_map<HRL_id, HRL_PostProcess*> post_processes_;
 
 
 //Utils Non-API Functions :
@@ -47,7 +49,7 @@ std::vector<HRL_Mesh*> GetSortedSprites()
 		}
 	}
 
-	std::sort(sprites_.begin(), sprites_.end(), [](const HRL_Mesh* a, const HRL_Mesh* b)
+	std::stable_sort(sprites_.begin(), sprites_.end(), [](const HRL_Mesh* a, const HRL_Mesh* b)
 	{
 		return a->position_.z + a->draw_order_ < b->position_.z + b->draw_order_;
 	});
@@ -55,7 +57,23 @@ std::vector<HRL_Mesh*> GetSortedSprites()
 	return sprites_;
 }
 
+std::vector<HRL_Light*> GetLightsVector()
+{
+	std::vector<HRL_Light*> lvector;
 
+	//on réserve la taille pour eviter l'alocation a chaque boucle
+	lvector.reserve(lights_.size());
+
+	for (const auto& [id, light] : lights_)
+	{
+		lvector.push_back(light);
+	}
+	return lvector;
+}
+
+
+
+/// API Implementation ///
 
 void HRL_Init(HRL_uint _api)
 {
@@ -136,6 +154,12 @@ void HRL_Shutdown()
 	}
 	meshes_.clear();
 
+	for (const auto& [id, light] : lights_)
+	{
+		delete light;
+	}
+	lights_.clear();
+
 	for (const auto& [id, material] : materials_)
 	{
 		delete material;
@@ -207,6 +231,8 @@ const char* HRL_GetLastError()
 	return err.c_str();
 }
 
+
+//Meshes//
 HRL_id HRL_CreateMesh(HRL_uint _type)
 {
 	if (_type == HRL_Sprite || _type == HRL_2D_Mesh || _type == HRL_3D_Mesh)
@@ -313,27 +339,121 @@ void HRL_SetSpriteDrawOrder(HRL_id _meshid, float _draworder)
 }
 
 
+
+//Lights//
 HRL_id HRL_CreateLight(HRL_uint _type)
 {
-	return HRL_InvalidID;
+	if (_type == HRL_PointLight || _type == HRL_DirectionalLight || _type == HRL_SpotLight)
+	{
+		auto* l = new HRL_Light();
+		l->type_ = _type;
+
+		HRL_id newId = GenerateHRL_ID();
+		lights_.emplace(newId, l);
+
+		g_Backend.RHI_UpdateLights(GetLightsVector());
+
+		return newId;
+	}
+	else
+	{
+		lastErrorCode = "HRL_CreateLight error : invalid type";
+		return HRL_InvalidID;
+	}
 }
+
 void HRL_DeleteLight(HRL_id _lightid)
 {
+	auto it = lights_.find(_lightid);
+	if (it == lights_.end())
+	{
+		lastErrorCode = "HRL_DeleteLight error : invalid id";
+	}
+	else
+	{
+		delete it->second;
+		lights_.erase(it);
+
+		g_Backend.RHI_UpdateLights(GetLightsVector());
+	}
 }
+
 void HRL_SetLightColor(HRL_id _lightid, float x, float y, float z)
 {
+	auto it = lights_.find(_lightid);
+	if (it == lights_.end())
+	{
+		lastErrorCode = "HRL_SetLightColor error : invalid id";
+	}
+	else
+	{
+		//rappel : la derniere valeur ne compte pas, elle est juste la pour des raisons techniques
+		it->second->color_ = glm::vec4(x, y, z, 0.f);
+
+		g_Backend.RHI_UpdateLights(GetLightsVector());
+	}
 }
+
 void HRL_SetLightIntensity(HRL_id _lightid, float i)
 {
+	auto it = lights_.find(_lightid);
+	if (it == lights_.end())
+	{
+		lastErrorCode = "HRL_SetLightIntensity error : invalid id";
+	}
+	else
+	{
+		it->second->intensity_ = i;
+
+		g_Backend.RHI_UpdateLights(GetLightsVector());
+	}
 }
+
 void HRL_SetLightAttenuation(HRL_id _lightid, float a)
 {
+	auto it = lights_.find(_lightid);
+	if (it == lights_.end())
+	{
+		lastErrorCode = "HRL_SetLightAttenuation error : invalid id";
+	}
+	else
+	{
+		it->second->attenuation_ = a;
+
+		g_Backend.RHI_UpdateLights(GetLightsVector());
+	}
 }
+
 void HRL_SetLightLocation(HRL_id _lightid, float x, float y, float z)
 {
+	auto it = lights_.find(_lightid);
+	if (it == lights_.end())
+	{
+		lastErrorCode = "HRL_SetLightLocation error : invalid id";
+	}
+	else
+	{
+		//rappel : la derniere valeur ne compte pas, elle est juste la pour des raisons techniques
+		it->second->position_ = glm::vec4(x, y, z, 0.f);
+
+		g_Backend.RHI_UpdateLights(GetLightsVector());
+	}
 }
+
 void HRL_SetLightRotation(HRL_id _lightid, float yaw, float pitch, float roll)
 {
+	auto it = lights_.find(_lightid);
+	if (it == lights_.end())
+	{
+		lastErrorCode = "HRL_SetLightRotation error : invalid id";
+	}
+	else
+	{
+		//rappel : la derniere valeur ne compte pas, elle est juste la pour des raisons techniques
+		it->second->rotation_ = glm::vec4(yaw, pitch, roll, 0.f);
+
+		g_Backend.RHI_UpdateLights(GetLightsVector());
+	}
 }
 
 
@@ -354,10 +474,34 @@ void HRL_DeleteTexture(HRL_id _textureid)
 //Post Process//
 HRL_id HRL_CreatePostProcess(HRL_id _matid)
 {
-	return HRL_InvalidID;
+	auto it = materials_.find(_matid);
+	if (it == materials_.end())
+	{
+		lastErrorCode = "HRL_CreatePostProcess error : invalid material ID";
+		return HRL_InvalidID;
+	}
+	else
+	{
+		auto p = new HRL_PostProcess();
+		p->material_ = _matid;
+
+		HRL_id newId = GenerateHRL_ID();
+		post_processes_.emplace(newId, p);
+		return newId;
+	}
 }
 void HRL_DeletePostProcess(HRL_id _postid)
 {
+	auto it = post_processes_.find(_postid);
+	if (it == post_processes_.end())
+	{
+		lastErrorCode = "HRL_DeletePostProcess error : invalid ID";
+	}
+	else
+	{
+		delete it->second;
+		post_processes_.erase(it);
+	}
 }
 
 
@@ -392,7 +536,6 @@ void HRL_DeleteMaterial(HRL_id _matid)
 	if (it == materials_.end())
 	{
 		lastErrorCode = "HRL_DeleteMaterial, invalid ID";
-		return;
 	}
 	else
 	{
@@ -407,7 +550,6 @@ void HRL_MaterialSetInt(HRL_id _matid, const char* _uniformName, int a)
 	if (it == materials_.end())
 	{
 		lastErrorCode = "HRL_MaterialSetInt, invalid ID";
-		return;
 	}
 	else
 	{
@@ -436,7 +578,6 @@ void HRL_MaterialSetBool(HRL_id _matid, const char* _uniformName, int a)
 	if (it == materials_.end())
 	{
 		lastErrorCode = "HRL_MaterialSetBool, invalid ID";
-		return;
 	}
 	else
 	{
@@ -450,7 +591,6 @@ void HRL_MaterialSetFloat(HRL_id _matid, const char* _uniformName, float a)
 	if (it == materials_.end())
 	{
 		lastErrorCode = "HRL_MaterialSetFloat, invalid ID";
-		return;
 	}
 	else
 	{
@@ -464,7 +604,6 @@ void HRL_MaterialSetVec2(HRL_id _matid, const char* _uniformName, float x, float
 	if (it == materials_.end())
 	{
 		lastErrorCode = "HRL_MaterialSetVec2, invalid ID";
-		return;
 	}
 	else
 	{
@@ -478,7 +617,6 @@ void HRL_MaterialSetVec3(HRL_id _matid, const char* _uniformName, float x, float
 	if (it == materials_.end())
 	{
 		lastErrorCode = "HRL_MaterialSetVec3, invalid ID";
-		return;
 	}
 	else
 	{
@@ -492,7 +630,6 @@ void HRL_MaterialSetVec4(HRL_id _matid, const char* _uniformName, float x, float
 	if (it == materials_.end())
 	{
 		lastErrorCode = "HRL_MaterialSetVec4, invalid ID";
-		return;
 	}
 	else
 	{
@@ -526,7 +663,6 @@ void HRL_DeleteViewport(HRL_id _viewportid)
 	if (it == viewports_.end())
 	{
 		lastErrorCode = "HRL_DeleteViewport, invalid ID";
-		return;
 	}
 	else
 	{
@@ -560,7 +696,6 @@ void HRL_SetViewportRect(HRL_id _viewportid, float x, float y, float _width, flo
 	if (it == viewports_.end())
 	{
 		lastErrorCode = "HRL_SetViewportRect, invalid ID";
-		return;
 	}
 	else
 	{
@@ -581,7 +716,7 @@ HRL_id HRL_CreateCamera(HRL_uint _type)
 			//type, position, rotation
 			_type,
 			glm::vec3(1.f),
-			glm::vec3(1.f),
+			glm::vec3(0.f),
 
 			//fov vertical, near plane, far plane
 			1000.f,
@@ -608,6 +743,7 @@ void HRL_DeleteCamera(HRL_id _camid)
 	else
 	{
 		delete it->second;
+		cameras_.erase(it);
 	}
 }
 
@@ -631,7 +767,6 @@ void HRL_SetCameraOrthoVertical(HRL_id _camid, float _height)
 	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraOrthoVertical, invalid ID";
-		return;
 	}
 	else
 	{
@@ -652,7 +787,6 @@ void HRL_SetCameraPerspectiveFov(HRL_id _camid, float _fov)
 	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraPerspectiveFov, invalid ID";
-		return;
 	}
 	else
 	{
@@ -673,7 +807,6 @@ void HRL_SetCameraNearPlane(HRL_id _camid, float _nearPlane)
 	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraNearPlane, invalid ID";
-		return;
 	}
 	else
 	{
@@ -687,7 +820,6 @@ void HRL_SetCameraFarPlane(HRL_id _camid, float _farPlane)
 	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraFarPlane, invalid ID";
-		return;
 	}
 	else
 	{
@@ -701,7 +833,6 @@ void HRL_SetCameraPosition(HRL_id _camid, float x, float y, float z)
 	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraPosition, invalid ID";
-		return;
 	}
 	else
 	{
@@ -715,7 +846,6 @@ void HRL_SetCameraRotation(HRL_id _camid, float roll, float pitch, float yaw)
 	if (it == cameras_.end())
 	{
 		lastErrorCode = "HRL_SetCameraRotation, invalid ID";
-		return;
 	}
 	else
 	{

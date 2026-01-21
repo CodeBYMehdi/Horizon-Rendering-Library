@@ -169,21 +169,24 @@ int main()
 
   //on appelle initcontext avec le loader glfw (qui renvoie l'adresse opaque de la fenetre en gros)
   HRL_InitContext(1280, 720, (void*)glfwGetProcAddress);
-  HRL_CheckErrors();
 
   //on ouvre la texture
   size_t texSize;
   std::string texString = OpenFile("canada.jpg", &texSize);
+  size_t normalSize;
+  std::string normalString = OpenFile("normal.jpg", &normalSize);
   //crée la texture et le material
   HRL_id tex = HRL_CreateTexture(HRL_Tex_Albedo, texString.c_str(), texSize);
+  HRL_id normaltex = HRL_CreateTexture(HRL_Tex_Normal, normalString.c_str(), normalSize);
   //material
   HRL_id mat = HRL_CreateMaterial(HRL_SpriteShader);
   HRL_MaterialSetTexture(mat, "Albedo", tex);
+  HRL_MaterialSetTexture(mat, "NormalMap", normaltex);
 
   //mesh 1 : canada flag
   HRL_id sprite = HRL_CreateMesh(HRL_Sprite);
   HRL_SetMeshMaterial(sprite, mat);
-  HRL_SetMeshScale(sprite, 100, 100, 100);
+  HRL_SetMeshScale(sprite, 10, 10, 10);
 
   //Mesh 2 : portugal flag
   float ptZRot = 0.f; //pour faire tourner le sprite
@@ -199,7 +202,7 @@ int main()
 
 
   //viewport 0 (default) (uses by default camera id 0)
-  HRL_SetViewportRect(0,0.f,0.f,1.f, 0.5f);
+  //HRL_SetViewportRect(0,0.f,0.f,1.f, 0.5f);
 
   //camera 0 (default)
   HRL_SetCameraType(0, HRL_Perspective);
@@ -209,8 +212,16 @@ int main()
   //other camera and viewport
   HRL_id cam1 = HRL_CreateCamera(HRL_Perspective);
   HRL_SetCameraPerspectiveFov(cam1, 130.f);
-  HRL_id viewport = HRL_CreateViewport(cam1, 0.f, 0.5f, 1.f, 0.5f);
+  //HRL_id viewport = HRL_CreateViewport(cam1, 0.f, 0.5f, 1.f, 0.5f);
 
+
+  //Lights
+  HRL_id light0 = HRL_CreateLight(HRL_PointLight);
+  HRL_SetLightAttenuation(light0, 0.02f);
+  HRL_SetLightIntensity(light0, 5.f);
+  HRL_SetLightColor(light0, 1.f, 1.f, 1.f);
+  HRL_SetLightLocation(light0, 10.f, 0.f, 0.f);
+  HRL_SetLightRotation(light0, 0.f, 0.f, 0.f);
 
 
   //laisser

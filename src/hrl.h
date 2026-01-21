@@ -126,7 +126,7 @@ extern "C" {
 	const char* HRL_GetLastError();
 
 
-	//HRL Sprites
+	//HRL Meshes
 	/**
 	 * @param _type HRL_Sprite, HRL_2D_Mesh, HRL_3D_Mesh
 	 * @return HRL_id of the new object
@@ -145,6 +145,7 @@ extern "C" {
 	void HRL_SetMeshLocation(HRL_id _meshid, float x, float y, float z);
 	void HRL_SetMeshRotation(HRL_id _meshid, float roll, float pitch, float yaw);
 	void HRL_SetMeshScale(HRL_id _meshid, float x, float y, float z);
+
 	/**
 	 * This will be used only when 2 sprites are collinding in Z axle
 	 */

@@ -2,8 +2,8 @@
  * Copyright (c) 2025-2026 Oscar Soirey
  * https://github.com/oscar-soirey/Horizon-Rendering-Library
  *
- * This project was developed by a single passionate developer.
- * I�ve tried to make everything work smoothly, but there may still be bugs.
+ * This project was developed by a single passionate developer
+ * I've tried to make everything work smoothly, but there may still be bugs.
  * If you encounter any issues or have suggestions, please feel free to contact me at:
  * oscarsoirey.contact@gmail.com
  * Thank you for your support and understanding
@@ -126,7 +126,7 @@ extern "C" {
 	const char* HRL_GetLastError();
 
 
-	//HRL Sprites
+	//HRL Meshes
 	/**
 	 * @param _type HRL_Sprite, HRL_2D_Mesh, HRL_3D_Mesh
 	 * @return HRL_id of the new object
@@ -145,6 +145,11 @@ extern "C" {
 	void HRL_SetMeshLocation(HRL_id _meshid, float x, float y, float z);
 	void HRL_SetMeshRotation(HRL_id _meshid, float roll, float pitch, float yaw);
 	void HRL_SetMeshScale(HRL_id _meshid, float x, float y, float z);
+
+	/**
+	 * This will be used only when 2 sprites are collinding in Z axle
+	 */
+	void HRL_SetSpriteDrawOrder(HRL_id _meshid, float _draworder);
 
 
 	//Lights

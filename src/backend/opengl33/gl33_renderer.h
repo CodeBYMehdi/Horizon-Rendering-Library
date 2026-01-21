@@ -4,6 +4,8 @@
 #include "../../hrl.h"
 #include "../../core/backend_vtable.h"
 
+#include <vector>
+
 void GL33_Init();
 void GL33_InitContext(HRL_uint _width, HRL_uint _height, void* loader);
 void GL33_Shutdown();
@@ -12,6 +14,8 @@ void GL33_BeginFrame();
 void GL33_BindViewport(HRL_Viewport* viewport);
 void GL33_BindMaterial(HRL_Material* mat);
 void GL33_DrawMesh(HRL_Mesh* mesh);
+
+void GL33_UpdateLights(const std::vector<HRL_Light*>& lights);
 
 HRL_id GL33_CreateTexture(HRL_uint _type, const char* _imageContent, const size_t _imageSize);
 void GL33_DeleteTexture(HRL_id _id);

@@ -7,6 +7,7 @@
 
 typedef uint64_t HRL_BackendHandle;
 
+//MESH
 typedef struct {
   HRL_uint type_;
 
@@ -19,21 +20,26 @@ typedef struct {
   glm::vec3 scale_;
 }HRL_Mesh;
 
+//LIGHT
 typedef struct {
   HRL_uint type_;
-
+  float intensity_;
+  float attenuation_;
+  /**
+   * On utilise des vec4 pour eviter de poser des problemes de paddings pour certains backends
+   */
   glm::vec3 position_;
   glm::vec3 rotation_;
 
   glm::vec3 color_;
-  float intensity_;
-  float attenuation_;
 }HRL_Light;
 
+//POST PROCESS
 typedef struct {
   HRL_id material_;
 }HRL_PostProcess;
 
+//MATERIAL
 typedef struct {
   HRL_id shader_;
 
@@ -45,6 +51,7 @@ typedef struct {
   std::unordered_map<const char*, glm::vec4> vec4Params_;
 }HRL_Material;
 
+//CAMERA
 typedef struct {
   HRL_uint type_;
 
@@ -56,6 +63,7 @@ typedef struct {
   float far_plane_;
 }HRL_Camera;
 
+//VIEWPORT
 typedef struct {
   HRL_Camera* camera_;
 

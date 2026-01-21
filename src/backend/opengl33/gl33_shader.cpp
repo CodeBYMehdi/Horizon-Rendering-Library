@@ -91,6 +91,15 @@ int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const c
   glUniform1i(FindUniformLocation("TexCustom5"), 13);
   glUniform1i(FindUniformLocation("TexCustom6"), 14);
 
+
+  //Faire les bindings des ubo (obligatoire coté CPU avant opengl 4.2+)
+  GLuint uboIndex = glGetUniformBlockIndex(id, "LightBlock");
+  if (uboIndex != GL_INVALID_INDEX)
+  {
+    //on choisit le binding point 0 pour le uniform LightBlock
+    glUniformBlockBinding(id, uboIndex, 0);
+  }
+
   return 0;
 }
 

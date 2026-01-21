@@ -16,6 +16,8 @@ HRL_vtable GetOpenGL33Backend()
 	vtable.RHI_BindMaterial = GL33_BindMaterial;
 	vtable.RHI_DrawMesh = GL33_DrawMesh;
 
+	vtable.RHI_UpdateLights = GL33_UpdateLights;
+
 	vtable.RHI_CreateTexture = GL33_CreateTexture;
 	vtable.RHI_DeleteTexture = GL33_DeleteTexture;
 

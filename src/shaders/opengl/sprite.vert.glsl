@@ -16,13 +16,15 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+out vec3 fragPos;
 out vec2 uv;
 
 void main()
 {
     vec4 pos = vec4(apos, 0.0, 1.0);
 
-    //on passe les coordonees uv au fragment
+    //on passe les coordonees fragment et uv au fragment shader
+    fragPos = vec3(model * pos);
     uv = auv;
 
     //garder cet ordre
