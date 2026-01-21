@@ -213,7 +213,6 @@ int main()
 
 
 
-
   //laisser
   HRL_CheckErrors();
 
@@ -239,10 +238,10 @@ int main()
     ProcessCameraMovement(win);
     ProcessCameraRotation(win);
     HRL_SetCameraPosition(0, camX, camY, camZ);
-    HRL_SetCameraRotation(0, 0.f, pitch, yaw);
+    HRL_SetCameraRotation(0, pitch, yaw, 0.f);
 
     HRL_SetCameraPosition(cam1, camX, camY, camZ);
-    HRL_SetCameraRotation(cam1, 0.f, pitch, yaw);
+    HRL_SetCameraRotation(cam1, pitch, yaw, 0.f);
 
     ptZRot += 1.f * (float)dt;
     HRL_SetMeshRotation(sprite2, 0.f, 0.f, ptZRot);

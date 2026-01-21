@@ -9,6 +9,9 @@
 
 #include <unordered_map>
 #include <string>
+#include <algorithm>
+#include <vector>
+
 #include <glm/glm.hpp>
 
 
@@ -30,6 +33,28 @@ static std::unordered_map<HRL_id, HRL_Mesh*> meshes_;
 static std::unordered_map<HRL_id, HRL_Material*> materials_;
 static std::unordered_map<HRL_id, HRL_Viewport*> viewports_;
 static std::unordered_map<HRL_id, HRL_Camera*> cameras_;
+
+
+//Utils Non-API Functions :
+std::vector<HRL_Mesh*> GetSortedSprites()
+{
+	std::vector<HRL_Mesh*> sprites_;
+	for (const auto& [id, mesh] : meshes_)
+	{
+		if (mesh->type_ == HRL_Sprite)
+		{
+			sprites_.push_back(mesh);
+		}
+	}
+
+	std::sort(sprites_.begin(), sprites_.end(), [](const HRL_Mesh* a, const HRL_Mesh* b)
+	{
+		return a->position_.z + a->draw_order_ < b->position_.z + b->draw_order_;
+	});
+
+	return sprites_;
+}
+
 
 
 void HRL_Init(HRL_uint _api)
@@ -144,9 +169,10 @@ void HRL_EndFrame()
 	{
 		g_Backend.RHI_BindViewport(viewport);
 
-		for (const auto& [id, mesh] : meshes_)
+		// --- Draw Sprites --- //
+		for (const auto& sprite : GetSortedSprites())
 		{
-			auto mat_it = materials_.find(mesh->material_);
+			auto mat_it = materials_.find(sprite->material_);
 			if (mat_it == materials_.end())
 			{
 				//si on trouve pas le material, on passe l'iteration de la boucle
@@ -155,8 +181,10 @@ void HRL_EndFrame()
 			}
 			g_Backend.RHI_BindMaterial(mat_it->second);
 
-			g_Backend.RHI_DrawMesh(mesh);
+			g_Backend.RHI_DrawMesh(sprite);
 		}
+
+		// --- Mettre ici le draw des mesh 3D --- //
 	}
 }
 
@@ -270,6 +298,20 @@ void HRL_SetMeshScale(HRL_id _meshid, float x, float y, float z)
 		it->second->scale_ = glm::vec3(x, y, z);
 	}
 }
+
+void HRL_SetSpriteDrawOrder(HRL_id _meshid, float _draworder)
+{
+	auto it = meshes_.find(_meshid);
+	if (it == meshes_.end())
+	{
+		lastErrorCode = "HRL_SetSpriteDrawOrder, invalid ID";
+	}
+	else
+	{
+		it->second->draw_order_ = _draworder;
+	}
+}
+
 
 HRL_id HRL_CreateLight(HRL_uint _type)
 {

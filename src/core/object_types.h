@@ -12,6 +12,8 @@ typedef struct {
 
   HRL_id material_;
 
+  float draw_order_;
+
   glm::vec3 position_;
   glm::vec3 rotation_;
   glm::vec3 scale_;

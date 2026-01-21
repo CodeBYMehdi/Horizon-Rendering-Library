@@ -1,5 +1,5 @@
-#ifndef HRL_GL_33_BACKEND
-#define HRL_GL_33_BACKEND
+#ifndef HRL_GL33_BACKEND
+#define HRL_GL33_BACKEND
 
 #include "../../core/backend_vtable.h"
 
