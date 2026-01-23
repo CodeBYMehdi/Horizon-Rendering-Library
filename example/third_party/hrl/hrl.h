@@ -2,8 +2,8 @@
  * Copyright (c) 2025-2026 Oscar Soirey
  * https://github.com/oscar-soirey/Horizon-Rendering-Library
  *
- * This project was developed by a single passionate developer
- * I've tried to make everything work smoothly, but there may still be bugs.
+ * This project was developed by a single passionate developer.
+ * I�ve tried to make everything work smoothly, but there may still be bugs.
  * If you encounter any issues or have suggestions, please feel free to contact me at:
  * oscarsoirey.contact@gmail.com
  * Thank you for your support and understanding
@@ -48,6 +48,16 @@ typedef unsigned int HRL_uint;
 //Errors
 #define HRL_InvalidID										((HRL_id)-1)
 
+//Textures
+#define HRL_T_Albedo									"T_Albedo"
+#define HRL_T_Normal									"T_Normal"
+#define HRL_T_Specular								"T_Specular"
+#define HRL_T_Roughness								"T_Roughness"
+#define HRL_T_Metalic									"T_Metalic"
+#define HRL_T_Alpha										"T_Alpha"
+#define HRL_T_ShadowMap								"T_ShadowMap"
+#define HRL_T_CubeMap									"T_CubeMap"
+
 //APIs
 #define HRL_OpenGL33										0x0001
 #define HRL_OpenGL45										0x0002
@@ -73,27 +83,19 @@ typedef unsigned int HRL_uint;
 #define HRL_DebugBox										0x0032
 #define HRL_DebugSphere									0x0033
 
-//Textures
-#define HRL_Tex_Albedo									0x0041
-#define HRL_Tex_Normal									0x0042
-#define HRL_Tex_Specular								0x0043
-#define HRL_Tex_Roughness								0x0044
-#define HRL_Tex_Metalic									0x0045
-#define HRL_Tex_Alpha										0x0046
-#define HRL_Tex_ShadowMap								0x0047
-#define HRL_Tex_CubeMap									0x0048
-
-#define HRL_Tex_Custom0									0x0049
-#define HRL_Tex_Custom1									0x004A
-#define HRL_Tex_Custom2									0x004B
-#define HRL_Tex_Custom3									0x004C
-#define HRL_Tex_Custom4									0x004D
-#define HRL_Tex_Custom5									0x004E
-#define HRL_Tex_Custom6									0x004F
-
 //Camera
-#define HRL_Ortho												0x0051
-#define HRL_Perspective									0x0052
+#define HRL_Ortho												0x0041
+#define HRL_Perspective									0x0042
+
+//Filter Textures
+#define HRL_Filter_Nearest							0x0050
+#define HRL_Filter_Linear								0x0051
+#define HRL_Filter_Bilinear							0x0052
+#define HRL_Filter_Trilinear						0x0053
+#define HRL_Filter_Anistropic						0x0054
+#define HRL_Filter_Supersampling				0x0055
+
+
 
 
 //Default Shaders (we reserve theses ID)
@@ -171,6 +173,7 @@ extern "C" {
 	void HRL_SetLightRotation(HRL_id _lightid, float roll, float pitch, float yaw);
 
 
+
 	//Textures
 	/**
 	 * @brief Supported extensions : png, jpeg, jpg, bmp, tga, gif (single image), hdr, psd (half)
@@ -180,12 +183,18 @@ extern "C" {
 	 * @param _fileContent content of the file (supported extensions) (opened in binary mode)
 	 * @return HRL_id of the new object
 	 */
-	HRL_id HRL_CreateTexture(HRL_uint _type, const char* _fileContent, size_t _bufferSize);
+	HRL_id HRL_CreateTexture(const char* _fileContent, size_t _bufferSize);
 	/**
 	 * @param _meshid HRL_id of the light
 	 */
 	void HRL_DeleteTexture(HRL_id _textureid);
 	//ajouter des fonctions de controle des textures
+
+	//when the texture is smaller on the screen than its real size
+	void HRL_SetTextureMinFilter(HRL_uint _filter);
+	//when the texture is bigger on the screen than its real size
+	void HRL_SetTextureMagFilter(HRL_uint _filter);
+
 
 
 	//Post Process

@@ -7,7 +7,7 @@ with open(input_file, "rb") as f:
     data = f.read()
 
 out = "#include <stddef.h>\n"
-out += f"const unsigned char {symbol}[] = {{\n"
+out += f"unsigned char {symbol}[{len(data) + 1}] = {{\n"
 out += ','.join(f"0x{b:02x}" for b in data)
 if(not len(data) <= 0):
     #on null-termine la chaine

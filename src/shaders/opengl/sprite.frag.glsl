@@ -12,22 +12,13 @@ out vec4 FragColor;
 in vec3 fragPos;
 in vec2 uv;
 
-//Textures
-uniform sampler2D Albedo;
-uniform sampler2D NormalMap;
-uniform sampler2D Specular;
-uniform sampler2D Roughness;
-uniform sampler2D Metalic;
-uniform sampler2D Alpha;
-uniform sampler2D ShadowMap;
-uniform sampler2D CubeMap;
-uniform sampler2D TexCustom0;
-uniform sampler2D TexCustom1;
-uniform sampler2D TexCustom2;
-uniform sampler2D TexCustom3;
-uniform sampler2D TexCustom4;
-uniform sampler2D TexCustom5;
-uniform sampler2D TexCustom6;
+//Textures pour sprite
+uniform sampler2D T_Albedo;
+uniform sampler2D T_Normal;
+uniform sampler2D T_Specular;
+uniform sampler2D T_Roughness;
+uniform sampler2D T_Metalic;
+uniform sampler2D T_Alpha;
 
 uniform vec3 TintColor;
 
@@ -60,13 +51,15 @@ layout(std140) uniform LightBlock
 void main()
 {
     //recuperer l'albedo / diffuse / basecolor
-    vec3 albedotex = texture(Albedo, uv).rgb;
+    //vec3 albedotex = texture(Albedo, uv).rgb;
 
     //recuperer la normal map et la transformer de [0;1] à [-1;1]
-    vec3 normaltex = texture(NormalMap, uv).rgb;
+    vec3 normaltex = texture(T_Normal, uv).rgb;
     normaltex = normalize(normaltex*2.0 - 1.0);
 
     vec3 result = vec3(0.0);
+
+    /*
 
     //parcourir les lights
     for(int i = 0; i < MAX_LIGHTS; i++)
@@ -101,6 +94,9 @@ void main()
     }
 
     result *= albedotex;
+*/
 
-    FragColor = vec4(result, 1.0);
+    result = normaltex;
+
+    FragColor = texture(T_Normal, uv);
 }

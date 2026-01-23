@@ -11,23 +11,20 @@ public:
   GL33_Texture()=default;
 
   //retourne 0 pour pas d'erreur et -1 pour erreur
-  int GL33_Create(const HRL_uint _type, const char* _imageContent, const size_t _imageSize);
+  int GL33_Create(const char* _imageContent, const size_t _imageSize);
 
   ~GL33_Texture();
 
-  void Bind();
-  HRL_uint GetType() const;
-
   HRL_uint GetWidth() const;
   HRL_uint GetHeight() const;
+
+  GLuint GetGL_ID() const;
 
   void Resize(HRL_uint width, HRL_uint height);
 
 private:
   GLuint glID_;
   GLint width_, height_, nr_channels_;
-
-  HRL_uint type_;
 };
 
 #endif

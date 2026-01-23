@@ -30,7 +30,7 @@ typedef struct {
 	void(*RHI_WindowResizeCallback)(int width, int height);
 
 	//Textures//
-	HRL_id(*RHI_CreateTexture)(HRL_uint type, const char* imageContent, const size_t imageSize);
+	HRL_id(*RHI_CreateTexture)(const char* imageContent, const size_t imageSize);
 	void(*RHI_DeleteTexture)(HRL_id id);
 
 	//Shaders//

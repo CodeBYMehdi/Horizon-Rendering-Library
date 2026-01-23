@@ -12,29 +12,8 @@
 #include <string>
 #include <unordered_map>
 
-static std::unordered_map<HRL_uint, GLuint> glSlots = {
-{HRL_Tex_Albedo, GL_TEXTURE0},
-{HRL_Tex_Normal, GL_TEXTURE1},
-{HRL_Tex_Specular, GL_TEXTURE2},
-{HRL_Tex_Roughness, GL_TEXTURE3},
-{HRL_Tex_Metalic, GL_TEXTURE4},
-{HRL_Tex_Alpha, GL_TEXTURE5},
-{HRL_Tex_ShadowMap, GL_TEXTURE6},
-{HRL_Tex_CubeMap, GL_TEXTURE7},
-{HRL_Tex_Custom0, GL_TEXTURE8},
-{HRL_Tex_Custom1, GL_TEXTURE9},
-{HRL_Tex_Custom2, GL_TEXTURE10},
-{HRL_Tex_Custom3, GL_TEXTURE11},
-{HRL_Tex_Custom4, GL_TEXTURE12},
-{HRL_Tex_Custom5, GL_TEXTURE13},
-{HRL_Tex_Custom6, GL_TEXTURE14},
-};
-
-int GL33_Texture::GL33_Create(const HRL_uint _type, const char* _imageContent, const size_t _imageSize)
+int GL33_Texture::GL33_Create(const char* _imageContent, const size_t _imageSize)
 {
-  //on commence par initialiser le type de texture
-  type_ = _type;
-
   //on crée la texture OpenGL
   glGenTextures(1, &glID_);
   glBindTexture(GL_TEXTURE_2D, glID_);
@@ -87,16 +66,9 @@ GL33_Texture::~GL33_Texture()
   glDeleteTextures(1, &glID_);
 }
 
-void GL33_Texture::Bind()
+GLuint GL33_Texture::GetGL_ID() const
 {
-  //on bind le bon slot opengl
-  glActiveTexture(glSlots[type_]);
-  glBindTexture(GL_TEXTURE_2D, glID_);
-}
-
-HRL_uint GL33_Texture::GetType() const
-{
-  return type_;
+  return glID_;
 }
 
 HRL_uint GL33_Texture::GetWidth() const

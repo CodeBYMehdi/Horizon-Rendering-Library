@@ -73,8 +73,9 @@ int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const c
   glDeleteShader(vertex);
   glDeleteShader(fragment);
 
-  //On set tous les uniforms constants de texture (albedo -> 0, normal -> 1, etc...)
   glUseProgram(id);
+  /*
+  //On set tous les uniforms constants de texture (albedo -> 0, normal -> 1, etc...)
   glUniform1i(FindUniformLocation("Albedo"), 0);
   glUniform1i(FindUniformLocation("Normal"), 1);
   glUniform1i(FindUniformLocation("Specular"), 2);
@@ -90,6 +91,7 @@ int GL33_Shader::GL33_Create(const char* _vertContent, size_t _vertSize, const c
   glUniform1i(FindUniformLocation("TexCustom4"), 12);
   glUniform1i(FindUniformLocation("TexCustom5"), 13);
   glUniform1i(FindUniformLocation("TexCustom6"), 14);
+  */
 
 
   //Faire les bindings des ubo (obligatoire coté CPU avant opengl 4.2+)

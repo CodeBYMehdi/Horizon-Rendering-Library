@@ -176,29 +176,31 @@ int main()
   size_t normalSize;
   std::string normalString = OpenFile("normal.jpg", &normalSize);
   //crée la texture et le material
-  HRL_id tex = HRL_CreateTexture(HRL_Tex_Albedo, texString.c_str(), texSize);
-  HRL_id normaltex = HRL_CreateTexture(HRL_Tex_Normal, normalString.c_str(), normalSize);
+  HRL_id tex = HRL_CreateTexture(texString.c_str(), texSize);
+  HRL_id normaltex = HRL_CreateTexture(normalString.c_str(), normalSize);
   //material
   HRL_id mat = HRL_CreateMaterial(HRL_SpriteShader);
-  HRL_MaterialSetTexture(mat, "Albedo", tex);
-  HRL_MaterialSetTexture(mat, "NormalMap", normaltex);
+  HRL_MaterialSetTexture(mat, HRL_T_Albedo, tex);
+  HRL_MaterialSetTexture(mat, HRL_T_Normal, normaltex);
 
   //mesh 1 : canada flag
   HRL_id sprite = HRL_CreateMesh(HRL_Sprite);
   HRL_SetMeshMaterial(sprite, mat);
   HRL_SetMeshScale(sprite, 10, 10, 10);
 
+
   //Mesh 2 : portugal flag
   float ptZRot = 0.f; //pour faire tourner le sprite
 
   size_t ptSize;
   std::string ptString = OpenFile("portugal.jpg", &ptSize);
-  HRL_id ptTex = HRL_CreateTexture(HRL_Tex_Albedo, ptString.c_str(), ptSize);
+  HRL_id ptTex = HRL_CreateTexture(ptString.c_str(), ptSize);
   HRL_id ptMat = HRL_CreateMaterial(HRL_SpriteShader);
-  HRL_MaterialSetTexture(ptMat, "Albedo", ptTex);
+  HRL_MaterialSetTexture(ptMat, HRL_T_Albedo, ptTex);
   HRL_id sprite2 = HRL_CreateMesh(HRL_Sprite);
   HRL_SetMeshMaterial(sprite2, ptMat);
   HRL_SetMeshScale(sprite2, 80, 80, 80);
+
 
 
   //viewport 0 (default) (uses by default camera id 0)
@@ -254,8 +256,8 @@ int main()
     HRL_SetCameraPosition(cam1, camX, camY, camZ);
     HRL_SetCameraRotation(cam1, pitch, yaw, 0.f);
 
-    ptZRot += 1.f * (float)dt;
-    HRL_SetMeshRotation(sprite2, 0.f, 0.f, ptZRot);
+    //ptZRot += 1.f * (float)dt;
+    //HRL_SetMeshRotation(sprite2, 0.f, 0.f, ptZRot);
 
     //debug keys
     if (glfwGetKey(win, GLFW_KEY_ESCAPE) == GLFW_PRESS)

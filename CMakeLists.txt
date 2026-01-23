@@ -3,6 +3,9 @@ project(hrl)
 
 set(CMAKE_CXX_STANDARD 20)
 
+include_directories(src)
+include_directories(third_party)
+
 find_package(Python REQUIRED)
 
 #creer le fichier generated dans le fichier cmake
@@ -25,19 +28,61 @@ function(embed_binary INPUT_FILE OUTPUT_NAME)
             PROPERTIES GENERATED TRUE
     )
 
+    # cpp générés
     set(EMBEDDED_SOURCES ${EMBEDDED_SOURCES} ${OUTPUT_CPP} PARENT_SCOPE)
+
+    # noms des ressources (IMPORTANT)
+    set(EMBEDDED_RESOURCES ${EMBEDDED_RESOURCES} ${OUTPUT_NAME} PARENT_SCOPE)
 endfunction()
 
-#opengl ressources
-embed_binary(${CMAKE_SOURCE_DIR}/src/shaders/opengl/sprite.vert.glsl gl_sprite_vert_shader)
-embed_binary(${CMAKE_SOURCE_DIR}/src/shaders/opengl/sprite.frag.glsl gl_sprite_frag_shader)
-embed_binary(${CMAKE_SOURCE_DIR}/src/shaders/opengl/ui.vert.glsl gl_ui_vert_shader)
-embed_binary(${CMAKE_SOURCE_DIR}/src/shaders/opengl/ui.frag.glsl gl_ui_frag_shader)
+
+#trouver tous les fichiers ressources
+file(GLOB_RECURSE RESSOURCES_FILES
+        CONFIGURE_DEPENDS
+        #shaders
+        ${CMAKE_SOURCE_DIR}/src/shaders/*.glsl
+        ${CMAKE_SOURCE_DIR}/src/shaders/*.hlsl
+        ${CMAKE_SOURCE_DIR}/src/shaders/*.metal
+
+        #textures
+        ${CMAKE_SOURCE_DIR}/src/ressources/textures/*.png
+)
+
+foreach(RES_FILE ${RESSOURCES_FILES})
+    #nom du fichier sans chemin
+    get_filename_component(FILE_NAME ${RES_FILE} NAME) #ex: sprite.vert.glsl
+
+    #sprite.vert -> sprite_vert exemple
+    string(REPLACE "." "_" BASE_NAME ${FILE_NAME})
+
+    #prefix res_
+    set(RESOURCE_NAME res_${BASE_NAME})
+
+    embed_binary(${RES_FILE} ${RESOURCE_NAME})
+endforeach()
 
 
-include_directories(src)
-include_directories(third_party)
+#generer automatiquement le fichier ressources.h
+function(generate_ressources_file_header)
+    set(RESSOURCES_H ${CMAKE_SOURCE_DIR}/src/ressources/ressources.h)
+    file(WRITE ${RESSOURCES_H}
+            "#ifndef GENERATED_RESSOURCES_H\n#define GENERATED_RESSOURCES_H\n\n#include <cstddef>\n\n"
+    )
+    foreach(RES ${EMBEDDED_RESOURCES})
+        file(APPEND ${RESSOURCES_H}
+                "extern unsigned char ${RES}[];\n"
+                "extern size_t ${RES}_len;\n\n"
+        )
+    endforeach()
+    file(APPEND ${RESSOURCES_H}
+            "#endif\n"
+    )
+    set_source_files_properties(${RESSOURCES_H}
+            PROPERTIES GENERATED TRUE
+    )
+endfunction()
 
+generate_ressources_file_header()
 
 add_library(hrl STATIC
         #third-party

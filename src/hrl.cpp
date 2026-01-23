@@ -1,4 +1,10 @@
+/**
+ * Contient l'implémentation des fichiers :
+ * hrl.h, hrl_gl.h, hrl_vulkan.h, hrl_d3d.h
+ */
+
 #include "hrl.h"
+#include "hrl_gl.h"
 
 #include "core/backend_vtable.h"
 #include "core/object_types.h"
@@ -26,6 +32,11 @@ std::string lastErrorCode;
 //variables window//
 unsigned int window_width_;
 unsigned int window_height_;
+
+
+//variables textures//
+HRL_uint textureMinFilter = HRL_Filter_Linear;
+HRL_uint textureMagFilter = HRL_Filter_Linear;
 
 
 //objects//
@@ -459,14 +470,23 @@ void HRL_SetLightRotation(HRL_id _lightid, float yaw, float pitch, float roll)
 
 
 //Textures//
-HRL_id HRL_CreateTexture(HRL_uint _type, const char* _fileContent, size_t _bufferSize)
+HRL_id HRL_CreateTexture(const char* _fileContent, size_t _bufferSize)
 {
 	//gestion des erreurs auto par le backend
-	return g_Backend.RHI_CreateTexture(_type, _fileContent, _bufferSize);
+	return g_Backend.RHI_CreateTexture(_fileContent, _bufferSize);
 }
 void HRL_DeleteTexture(HRL_id _textureid)
 {
 	g_Backend.RHI_DeleteTexture(_textureid);
+}
+
+void HRL_SetTextureMinFilter(HRL_uint _filter)
+{
+	textureMinFilter = _filter;
+}
+void HRL_SetTextureMagFilter(HRL_uint _filter)
+{
+	textureMagFilter = _filter;
 }
 
 
@@ -852,3 +872,4 @@ void HRL_SetCameraRotation(HRL_id _camid, float roll, float pitch, float yaw)
 		it->second->rotation_ = glm::vec3(roll, pitch, yaw);
 	}
 }
+

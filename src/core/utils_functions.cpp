@@ -5,7 +5,6 @@
 
 //on récupere la variable d'erreur déclarée dans hrl.cpp
 extern std::string lastErrorCode;
-
 void SetErrorCode(const std::string& e)
 {
 	lastErrorCode = e;
@@ -14,7 +13,6 @@ void SetErrorCode(const std::string& e)
 
 //Generer un id pour les objets HRL
 static HRL_id currentID = 0;
-
 HRL_id GenerateHRL_ID()
 {
 	return currentID++;
@@ -27,7 +25,6 @@ unsigned int GetWindowWidth()
 {
 	return window_width_;
 }
-
 extern unsigned int window_height_;
 unsigned int GetWindowHeight()
 {
@@ -43,7 +40,6 @@ glm::vec3 GetForwardVector(glm::vec3 _rot)
   forward.z = cos(glm::radians(_rot.x)) * sin(glm::radians(_rot.y));
   return glm::normalize(forward);
 }
-
 glm::vec3 GetRightVector(glm::vec3 _rot)
 {
   return glm::normalize(glm::cross(
@@ -51,11 +47,22 @@ glm::vec3 GetRightVector(glm::vec3 _rot)
     GetForwardVector(_rot)
   ));
 }
-
 glm::vec3 GetUpVector(glm::vec3 _rot)
 {
   return glm::normalize(glm::cross(
     GetForwardVector(_rot),
     GetRightVector(_rot)
   ));
+}
+
+
+extern HRL_uint textureMinFilter;
+HRL_uint GetTextureMinFilter()
+{
+  return textureMinFilter;
+}
+extern HRL_uint textureMagFilter;
+HRL_uint GetTextureMagFilter()
+{
+  return textureMagFilter;
 }
