@@ -1,5 +1,5 @@
 # Note
-This project was developed by a two passionate developers. W’ve tried to make everything work smoothly, but there may still be bugs.
+This project was developed by two passionate developers. W’ve tried to make everything work smoothly, but there may still be bugs.
 If you encounter any issues or have suggestions, please feel free to contact us at: oscarsoirey.contact@gmail.com or mehdibjjj@gmail.com
 Thank you for your support and understanding!
 
