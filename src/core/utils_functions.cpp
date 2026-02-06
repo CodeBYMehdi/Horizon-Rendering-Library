@@ -12,7 +12,7 @@ void SetErrorCode(const std::string& e)
 
 
 //Generer un id pour les objets HRL
-static HRL_id currentID = 0;
+static HRL_id currentID = 1;
 HRL_id GenerateHRL_ID()
 {
 	return currentID++;

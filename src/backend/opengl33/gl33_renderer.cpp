@@ -1,8 +1,8 @@
 #include "gl33_renderer.h"
-#include "../../ressources/ressources.h"
 #include "gl33_shader.h"
 #include "gl33_texture.h"
 
+#include "../../ressources/ressources.h"
 #include "../../core/utils_functions.h"
 #include "../../hrl.h"
 
@@ -55,7 +55,7 @@ static GLuint ubo[Ubo_Num];
 #define MAX_LIGHTS      32
 
 
-float sprite_vertices[] = {
+static float sprite_vertices[] = {
   // pos      // uv
   0.f, 0.f,   0.f, 0.f,
   1.f, 0.f,   1.f, 0.f,
@@ -64,7 +64,7 @@ float sprite_vertices[] = {
 };
 
 //indices pour deux triangles
-unsigned int sprite_indices[] = {
+static unsigned int sprite_indices[] = {
     0, 1, 2,
     2, 3, 0
 };
@@ -110,6 +110,16 @@ typedef struct {
 }GL_Light_t;
 
 
+
+typedef struct {
+  GLuint texture_;
+  GLuint framebuffer_;
+}GL_Scene_t;
+static std::unordered_map<HRL_id, GL_Scene_t*> gpu_scenes_;
+
+
+
+
 void check_errors(int line)
 {
   GLenum err; \
@@ -119,12 +129,17 @@ void check_errors(int line)
 #define GL33_CheckErrors() check_errors(__LINE__)
 
 
+
+
 //shaders//
 std::unordered_map<HRL_id, GL33_Shader*> shaders_;
 
 
 //Textures//
 static std::unordered_map<HRL_id, GL33_Texture*> textures_;
+
+
+
 
 
 /** Backend Implementation */
@@ -143,6 +158,10 @@ void GL33_InitContext(HRL_uint _width, HRL_uint _height, void* loader)
     SetErrorCode("Failed to init GLAD, (loader error)");
     return;
   }
+
+  //activer la transparence des shaders
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   //on crée les vao
   glGenVertexArrays(Buffer_Num, vao);
@@ -191,6 +210,7 @@ void GL33_InitContext(HRL_uint _width, HRL_uint _height, void* loader)
   //
 
 
+
   //on crée les shaders
   //ajouter une gestion des erreurs
   auto* spriteShader = new GL33_Shader();
@@ -201,7 +221,17 @@ void GL33_InitContext(HRL_uint _width, HRL_uint _height, void* loader)
     res_sprite_frag_glsl_len);
 
   shaders_.emplace(HRL_SpriteShader, spriteShader);
+
+
+  //Creer les texures de fallback
+
 }
+
+void GL33_ResetFramebuffer()
+{
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 
 void GL33_Shutdown()
 {
@@ -210,16 +240,33 @@ void GL33_Shutdown()
   glDeleteBuffers(Buffer_Num, ebo);
 }
 
-void GL33_BeginFrame()
-{
-  glClearColor(0.f, 0.f, 0.f, 1.f);
-  glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-}
-
 //passer plus tard a une structure RenderContext
 static HRL_Viewport* currentViewport;
 static HRL_Camera* currentCamera;
 static GL33_Shader* currentShader;
+
+//stocke le nombre de texures bindées avant de draw.
+//permet de savoir jusqu'a ou unbind les slots gl
+static int textureSlotsBinded;
+
+void GL33_BindScene(HRL_id _sceneid)
+{
+  auto it = gpu_scenes_.find(_sceneid);
+  if (it == gpu_scenes_.end())
+  {
+    SetErrorCode("Bind Scene error : scene id not valid");
+    return;
+  }
+  printf("Framebuffer id : %d. Scene id : %d\n", it->second->framebuffer_, _sceneid);
+  //si on veut draw on screen, le framebuffer id sera 0, donc l'ecran
+  glBindFramebuffer(GL_FRAMEBUFFER, it->second->framebuffer_);
+}
+
+void GL33_ClearScene()
+{
+  glClearColor(0.f, 0.f, 0.f, 1.f);
+  glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+}
 
 void GL33_BindViewport(HRL_Viewport* viewport)
 {
@@ -240,85 +287,91 @@ void GL33_BindMaterial(HRL_Material* mat)
     SetErrorCode("Bind material error : shader doesn't exists");
     return;
   }
+  auto* s = it->second;
+  //on set CurrentShader pour spécifier que les prochains calls utiliseront ce shader
+  currentShader = s;
+  s->Use();
+
+  //taille absolue du viewport width et height (on prend en compte la taille de la fenetre et la taille relative du viewport HRL)
+  float viewportWidth  = (float)GetWindowWidth() * currentViewport->width_;
+  float viewportHeight = (float)GetWindowHeight() * currentViewport->height_;
+
+  //on evite la division par 0
+  if (viewportHeight < 1e-3f)
+  {
+    viewportHeight = 1.f;
+  }
+
+  //calcul du ratio largeur/hauteur du viewport
+  float aspect = viewportWidth / viewportHeight;
+
+  glm::mat4 proj;
+  if (currentCamera->type_ == HRL_Perspective)
+  {
+    proj = glm::perspective(glm::radians(currentCamera->value_), aspect, currentCamera->near_plane_, currentCamera->far_plane_);
+  }
   else
   {
-    auto* s = it->second;
-    //on set CurrentShader pour spécifier que les prochains calls utiliseront ce shader
-    currentShader = s;
-    s->Use();
+    //on calcule la taille en hauteur d'abord, puis on fait le calcul de la largeur en fonction de la hauteur et de l'aspect
+    float halfHeight = currentCamera->value_ * 0.5f;
+    float halfWidth  = halfHeight * aspect;
+    proj = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight,
+                      currentCamera->near_plane_, currentCamera->far_plane_);
+  }
+  s->SetMat4("projection", proj);
 
-    //taille absolue du viewport width et height (on prend en compte la taille de la fenetre et la taille relative du viewport HRL)
-    float viewportWidth  = (float)GetWindowWidth() * currentViewport->width_;
-    float viewportHeight = (float)GetWindowHeight() * currentViewport->height_;
+  //position et vue de la camera
+  glm::mat4 view = glm::lookAt(
+    currentCamera->position_,
+    currentCamera->position_ + GetForwardVector(currentCamera->rotation_),
+    GetUpVector(currentCamera->rotation_)
+  );
+  s->SetMat4("view", view);
 
-    //calcul du ratio largeur/hauteur du viewport
-    float aspect = viewportWidth / viewportHeight;
+  //on passe tous les uniforms donnés par l'utilisateur
+  for (auto [name, value] : mat->intParams_)
+  {
+    s->SetInt(name, value);
+  }
 
-    glm::mat4 proj;
-    if (currentCamera->type_ == HRL_Perspective)
+  //utilisé pour unbind les textures apres avoir draw
+  textureSlotsBinded = (int)mat->textureParams_.size();
+
+  size_t index = 0;
+  for (auto [name, value] : mat->textureParams_)
+  {
+    //on recherche la texture via son id HRL
+    auto itTexture = textures_.find(value);
+    if (itTexture == textures_.end())
     {
-      proj = glm::perspective(glm::radians(currentCamera->value_), aspect, currentCamera->near_plane_, currentCamera->far_plane_);
-    }
-    else
-    {
-      //on calcule la taille en hauteur d'abord, puis on fait le calcul de la largeur en fonction de la hauteur et de l'aspect
-      float halfHeight = currentCamera->value_ * 0.5f;
-      float halfWidth  = halfHeight * aspect;
-      proj = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight,
-                        currentCamera->near_plane_, currentCamera->far_plane_);
-    }
-    s->SetMat4("projection", proj);
-
-    //position et vue de la camera
-    glm::mat4 view = glm::lookAt(
-      currentCamera->position_,
-      currentCamera->position_ + GetForwardVector(currentCamera->rotation_),
-      GetUpVector(currentCamera->rotation_)
-    );
-    s->SetMat4("view", view);
-
-    //on passe tous les uniforms donnés par l'utilisateur
-    for (auto [name, value] : mat->intParams_)
-    {
-      s->SetInt(name, value);
+      SetErrorCode("Material set texture uniform : invalid texture (HRL_id)");
+      return;
     }
 
-    size_t index = 0;
-    for (auto [name, value] : mat->textureParams_)
-    {
-      //on recherche la texture via son id HRL
-      auto itTexture = textures_.find(value);
-      if (itTexture == textures_.end())
-      {
-        SetErrorCode("Material set texture uniform : invalid texture (HRL_id)");
-        return;
-      }
+    //la classe texture gere le bind sur le bon container de texture (GL_TEXTURE0, GL_TEXTURE1, ...).
+    glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(GL_TEXTURE_2D, itTexture->second->GetGL_ID());
 
-      //la classe texture gere le bind sur le bon container de texture (GL_TEXTURE0, GL_TEXTURE1, ...).
-      glActiveTexture(GL_TEXTURE0 + index);
-      glBindTexture(GL_TEXTURE_2D, itTexture->second->GetGL_ID());
+    s->SetInt(name, (int)index);
 
-      s->SetInt(name, (int)index);
+    index++;
+  }
 
-      index++;
-    }
-
-    for (auto [name, value] : mat->floatParams_)
-    {
-      s->SetFloat(name, value);
-    }
-    for (auto [name, value] : mat->vec2Params_)
-    {
-      s->SetVec2(name, value);
-    }
-    for (auto [name, value] : mat->vec3Params_)
-    {
-      s->SetVec3(name, value);
-    }
-    for (auto [name, value] : mat->vec4Params_)
-    {
-      s->SetVec4(name, value);
-    }
+  for (auto [name, value] : mat->floatParams_)
+  {
+    s->SetFloat(name, value);
+  }
+  for (auto [name, value] : mat->vec2Params_)
+  {
+    s->SetVec2(name, value);
+  }
+  for (auto [name, value] : mat->vec3Params_)
+  {
+    s->SetVec3(name, value);
+  }
+  for (auto [name, value] : mat->vec4Params_)
+  {
+    s->SetVec4(name, value);
   }
 }
 
@@ -348,7 +401,16 @@ void GL33_DrawMesh(HRL_Mesh* mesh)
   //desactiver si 2D, activer si 3D
   glDisable(GL_DEPTH_TEST);
 
+
+  //on draw sur tous le render target
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+  //reset les binds de textures
+  for (int i = 0; i < textureSlotsBinded; i++)
+  {
+    glActiveTexture(GL_TEXTURE0 + i);
+    glBindTexture(GL_TEXTURE_2D, 0);
+  }
 }
 
 
@@ -383,6 +445,8 @@ void GL33_UpdateLights(const std::vector<HRL_Light*>& _lights)
     ++count;
   }
 
+
+  printf("update lights, size : %llu\n", count);
   //on passe les données à opengl
   glBindBuffer(GL_UNIFORM_BUFFER, ubo[LIGHT_UBO]);
   glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GL_Light_t), gpuLights);
@@ -404,10 +468,7 @@ HRL_id GL33_CreateTexture(const char* _imageContent, const size_t _imageSize)
     textures_.emplace(id, t);
     return id;
   }
-  else
-  {
-    return HRL_InvalidID;
-  }
+  return HRL_InvalidID;
 }
 
 void GL33_DeleteTexture(HRL_id _id)
@@ -418,11 +479,8 @@ void GL33_DeleteTexture(HRL_id _id)
     SetErrorCode("DeleteTexture error : Texture ID doesn't exists");
     return;
   }
-  else
-  {
-    delete it->second;
-    textures_.erase(it);
-  }
+  delete it->second;
+  textures_.erase(it);
 }
 
 
@@ -441,10 +499,7 @@ HRL_id GL33_CreateShader(const char *_vertContent, size_t _vertSize, const char 
     shaders_.emplace(id, s);
     return id;
   }
-  else
-  {
-    return HRL_InvalidID;
-  }
+  return HRL_InvalidID;
 }
 
 void GL33_DeleteShader(HRL_id _id)
@@ -463,7 +518,49 @@ void GL33_DeleteShader(HRL_id _id)
 }
 
 
+void GL33_CreateScene(HRL_id _newSceneid, int _renderOnScreen)
+{
+  auto* scene = new GL_Scene_t();
+  if (_renderOnScreen)
+  {
+    //le framebuffer est 0 (ecran)
+    scene->framebuffer_ = 0;
+  }
+  else
+  {
+    glGenTextures(1, &scene->texture_);
+    glBindTexture(GL_TEXTURE_2D, scene->texture_);
+    //1280, 720, Test//
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1280, 720, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+    glGenFramebuffers(1, &scene->framebuffer_);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene->framebuffer_);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene->texture_, 0);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    assert(status == GL_FRAMEBUFFER_COMPLETE && "Framebuffer incomplete!");
+  }
+
+  //les HRL_id sont partagés entre le backend et l'api
+  gpu_scenes_.emplace(_newSceneid, scene);
+}
+
+void GL33_DeleteScene(HRL_id _sceneid)
+{
+  auto it = gpu_scenes_.find(_sceneid);
+  if (it == gpu_scenes_.end())
+  {
+    SetErrorCode("GL33_DeleteScene error : invalid scene id");
+    return;
+  }
+
+  delete it->second;
+  gpu_scenes_.erase(it);
+}
 
 
 
@@ -476,7 +573,7 @@ unsigned int HRL_GL_GetTextureGL_ID(HRL_id _textureid)
   auto it = textures_.find(_textureid);
   if (it == textures_.end())
   {
-    SetErrorCode("DeleteTexture error : Texture ID doesn't exists");
+    SetErrorCode("HRL_GL_GetTextureGL_ID error : Texture ID doesn't exists");
     return GL_INVALID_VALUE;
   }
 
@@ -489,9 +586,21 @@ unsigned int HRL_GL_GetShaderGL_ID(HRL_id _shaderid)
   auto it = shaders_.find(_shaderid);
   if (it == shaders_.end())
   {
-    SetErrorCode("DeleteShader error : Shader ID doesn't exists");
+    SetErrorCode("HRL_GL_GetShaderGL_ID error : Shader ID doesn't exists");
     return GL_INVALID_VALUE;
   }
 
   return it->second->GetId();
+}
+
+unsigned int HRL_GL_GetSceneTextureGL_ID(HRL_id _sceneid)
+{
+  auto it = gpu_scenes_.find(_sceneid);
+  if (it == gpu_scenes_.end())
+  {
+    SetErrorCode("HRL_GL_GetSceneTextureGL_ID : ");
+    return GL_INVALID_VALUE;
+  }
+
+  return it->second->texture_;
 }

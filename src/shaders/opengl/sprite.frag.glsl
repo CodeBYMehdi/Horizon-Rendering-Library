@@ -1,3 +1,5 @@
+//Sprite fragment shader
+
 #version 330 core
 
 #define MAX_LIGHTS              32
@@ -51,15 +53,16 @@ layout(std140) uniform LightBlock
 void main()
 {
     //recuperer l'albedo / diffuse / basecolor
-    //vec3 albedotex = texture(Albedo, uv).rgb;
+    vec3 albedotex = texture(T_Albedo, uv).rgb;
 
     //recuperer la normal map et la transformer de [0;1] à [-1;1]
     vec3 normaltex = texture(T_Normal, uv).rgb;
-    normaltex = normalize(normaltex*2.0 - 1.0);
+    normaltex = normaltex * 2.0 - 1.0;
+
+    // Atténuer la force des normales
 
     vec3 result = vec3(0.0);
 
-    /*
 
     //parcourir les lights
     for(int i = 0; i < MAX_LIGHTS; i++)
@@ -94,9 +97,7 @@ void main()
     }
 
     result *= albedotex;
-*/
 
-    result = normaltex;
-
-    FragColor = texture(T_Normal, uv);
+    float alpha = texture(T_Albedo, uv).a;
+    FragColor = vec4(result, alpha);
 }

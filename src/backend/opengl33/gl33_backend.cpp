@@ -11,7 +11,11 @@ HRL_vtable GetOpenGL33Backend()
 	vtable.RHI_InitContext = GL33_InitContext;
 	vtable.RHI_Shutdown = GL33_Shutdown;
 
-	vtable.RHI_BeginFrame = GL33_BeginFrame;
+	vtable.RHI_ResetFramebuffer = GL33_ResetFramebuffer;
+
+	//vtable.RHI_BeginFrame = GL33_BeginFrame;
+	vtable.RHI_ClearScene = GL33_ClearScene;
+	vtable.RHI_BindScene = GL33_BindScene;
 	vtable.RHI_BindViewport = GL33_BindViewport;
 	vtable.RHI_BindMaterial = GL33_BindMaterial;
 	vtable.RHI_DrawMesh = GL33_DrawMesh;
@@ -20,6 +24,9 @@ HRL_vtable GetOpenGL33Backend()
 
 	vtable.RHI_CreateTexture = GL33_CreateTexture;
 	vtable.RHI_DeleteTexture = GL33_DeleteTexture;
+
+	vtable.RHI_CreateScene = GL33_CreateScene;
+	vtable.RHI_DeleteScene = GL33_DeleteScene;
 
 	vtable.RHI_CreateShader = GL33_CreateShader;
 	vtable.RHI_DeleteShader = GL33_DeleteShader;

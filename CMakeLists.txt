@@ -3,6 +3,9 @@ project(hrl)
 
 set(CMAKE_CXX_STANDARD 20)
 
+#debug messages
+set(CMAKE_MESSAGE_LOG_LEVEL DEBUG)
+
 include_directories(src)
 include_directories(third_party)
 
@@ -70,6 +73,7 @@ function(generate_ressources_file_header)
     )
     foreach(RES ${EMBEDDED_RESOURCES})
         file(APPEND ${RESSOURCES_H}
+                "//${RES}\n"
                 "extern unsigned char ${RES}[];\n"
                 "extern size_t ${RES}_len;\n\n"
         )

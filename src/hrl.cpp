@@ -40,19 +40,31 @@ HRL_uint textureMagFilter = HRL_Filter_Linear;
 
 
 //objects//
+typedef struct {
+	std::unordered_map<HRL_id, HRL_Mesh*> meshes;
+	std::unordered_map<HRL_id, HRL_Light*> lights;
+	std::unordered_map<HRL_id, HRL_Viewport*> viewports;
+	std::unordered_map<HRL_id, HRL_Camera*> cameras;
+	std::unordered_map<HRL_id, HRL_PostProcess*> post_processes;
+}hrl_scene_t;
+static std::unordered_map<HRL_id, hrl_scene_t*> scenes_;
+
+//ressources copié des scenes (pour favoriser l'acces)
 static std::unordered_map<HRL_id, HRL_Mesh*> meshes_;
 static std::unordered_map<HRL_id, HRL_Light*> lights_;
-static std::unordered_map<HRL_id, HRL_Material*> materials_;
 static std::unordered_map<HRL_id, HRL_Viewport*> viewports_;
 static std::unordered_map<HRL_id, HRL_Camera*> cameras_;
 static std::unordered_map<HRL_id, HRL_PostProcess*> post_processes_;
 
+//ressources globales
+static std::unordered_map<HRL_id, HRL_Material*> materials_;
+
 
 //Utils Non-API Functions :
-std::vector<HRL_Mesh*> GetSortedSprites()
+std::vector<HRL_Mesh*> GetSortedSprites(hrl_scene_t* _scene)
 {
 	std::vector<HRL_Mesh*> sprites_;
-	for (const auto& [id, mesh] : meshes_)
+	for (const auto& [id, mesh] : _scene->meshes)
 	{
 		if (mesh->type_ == HRL_Sprite)
 		{
@@ -62,14 +74,36 @@ std::vector<HRL_Mesh*> GetSortedSprites()
 
 	std::stable_sort(sprites_.begin(), sprites_.end(), [](const HRL_Mesh* a, const HRL_Mesh* b)
 	{
-		return a->position_.z + a->draw_order_ < b->position_.z + b->draw_order_;
+		if (a->position_.z == b->position_.z)
+		{
+			return a->draw_order_ < b->draw_order_;
+		}
+		return a->position_.z < b->position_.z;
 	});
 
 	return sprites_;
 }
 
-std::vector<HRL_Light*> GetLightsVector()
-{
+std::vector<HRL_Light*> GetLightsVector(/*HRL_id _scene*/)
+{/**
+	auto it = scenes_.find(_scene);
+	if (it == scenes_.end())
+	{
+		return {};
+	}
+
+	std::vector<HRL_Light*> lvector;
+
+	//on réserve la taille pour eviter l'alocation a chaque boucle
+	lvector.reserve(it->second->lights.size());
+
+	for (const auto& [id, light] : it->second->lights)
+	{
+		lvector.push_back(light);
+	}
+	return lvector;
+	*/
+
 	std::vector<HRL_Light*> lvector;
 
 	//on réserve la taille pour eviter l'alocation a chaque boucle
@@ -88,23 +122,6 @@ std::vector<HRL_Light*> GetLightsVector()
 
 void HRL_Init(HRL_uint _api)
 {
-	//Create camera and viewport 0 :
-	auto* cam = new HRL_Camera(
-		//type, position, rotation
-		HRL_Ortho,
-		glm::vec3(1.f),
-		glm::vec3(0.f),
-
-		//fov vertical, near plane, far plane
-		1000.f,
-		0.01f,
-		1000.f
-	);
-	cameras_.emplace(0, cam);
-
-	auto* viewport0 = new HRL_Viewport(cam, 0, 0, 1, 1);
-	viewports_.emplace(0, viewport0);
-
 	switch (_api)
 	{
 	case HRL_OpenGL33 :
@@ -121,11 +138,11 @@ void HRL_Init(HRL_uint _api)
 	{
 		break;
 	}
-	case HRL_DX11 :
+	case HRL_D3D11 :
 	{
 		break;
 	}
-	case HRL_DX12 :
+	case HRL_D3D12 :
 	{
 		break;
 	}
@@ -158,18 +175,37 @@ void HRL_InitContext(HRL_uint _width, HRL_uint _height, void* _loader)
 
 void HRL_Shutdown()
 {
-	//supprimer tous les objets
-	for (const auto& [id, mesh] : meshes_)
+	//supprimer tous les objets de toutes les scenes
+	for (const auto& [scene_id, scene] : scenes_)
 	{
-		delete mesh;
-	}
-	meshes_.clear();
+		for (const auto& [id, mesh] : scene->meshes)
+		{
+			delete mesh;
+		}
+		scene->meshes.clear();
 
-	for (const auto& [id, light] : lights_)
-	{
-		delete light;
+		for (const auto& [id, light] : scene->lights)
+		{
+			delete light;
+		}
+		scene->lights.clear();
+
+		for (const auto& [id, viewport] : scene->viewports)
+		{
+			delete viewport;
+		}
+		scene->viewports.clear();
+
+		for (const auto& [id, camera] : scene->cameras)
+		{
+			delete camera;
+		}
+		scene->cameras.clear();
+
+		delete scene;
 	}
-	lights_.clear();
+	scenes_.clear();
+
 
 	for (const auto& [id, material] : materials_)
 	{
@@ -177,50 +213,46 @@ void HRL_Shutdown()
 	}
 	materials_.clear();
 
-	for (const auto& [id, viewport] : viewports_)
-	{
-		delete viewport;
-	}
-	viewports_.clear();
-
-	for (const auto& [id, camera] : cameras_)
-	{
-		delete camera;
-	}
-	cameras_.clear();
-
 	g_Backend.RHI_Shutdown();
 }
 
 void HRL_BeginFrame()
 {
-	g_Backend.RHI_BeginFrame();
+	//g_Backend.RHI_BeginFrame();
 }
 
 void HRL_EndFrame()
 {
 	//appels à RHI_DrawMesh, HRI_BindMaterial, etc...
-	for (const auto& [id, viewport] : viewports_)
+	for (const auto& [scene_id, scene] : scenes_)
 	{
-		g_Backend.RHI_BindViewport(viewport);
+		g_Backend.RHI_BindScene(scene_id);
+		g_Backend.RHI_ClearScene();
 
-		// --- Draw Sprites --- //
-		for (const auto& sprite : GetSortedSprites())
+		for (const auto& [id, viewport] : scene->viewports)
 		{
-			auto mat_it = materials_.find(sprite->material_);
-			if (mat_it == materials_.end())
+			g_Backend.RHI_BindViewport(viewport);
+
+			// --- Draw Sprites --- //
+			for (const auto& sprite : GetSortedSprites(scene))
 			{
-				//si on trouve pas le material, on passe l'iteration de la boucle
-				lastErrorCode = "Tried to draw mesh : material not found";
-				continue;
+				auto mat_it = materials_.find(sprite->material_);
+				if (mat_it == materials_.end())
+				{
+					//si on trouve pas le material, on passe l'iteration de la boucle
+					lastErrorCode = "Tried to draw mesh : material not found";
+					continue;
+				}
+				g_Backend.RHI_BindMaterial(mat_it->second);
+
+				g_Backend.RHI_DrawMesh(sprite);
 			}
-			g_Backend.RHI_BindMaterial(mat_it->second);
 
-			g_Backend.RHI_DrawMesh(sprite);
+			// --- Mettre ici le draw des mesh 3D --- //
 		}
-
-		// --- Mettre ici le draw des mesh 3D --- //
 	}
+
+	g_Backend.RHI_ResetFramebuffer();
 }
 
 void HRL_WindowResizeCallback(int _width, int _height)
@@ -244,8 +276,14 @@ const char* HRL_GetLastError()
 
 
 //Meshes//
-HRL_id HRL_CreateMesh(HRL_uint _type)
+HRL_id HRL_CreateMesh(HRL_id _sceneid, HRL_uint _type)
 {
+	auto it_scene = scenes_.find(_sceneid);
+	if (it_scene == scenes_.end())
+	{
+		return HRL_InvalidID;
+	}
+
 	if (_type == HRL_Sprite || _type == HRL_2D_Mesh || _type == HRL_3D_Mesh)
 	{
 		auto* m = new HRL_Mesh();
@@ -257,6 +295,7 @@ HRL_id HRL_CreateMesh(HRL_uint _type)
 		m->scale_ = glm::vec3(1.f);
 
 		HRL_id newId = GenerateHRL_ID();
+		it_scene->second->meshes.emplace(newId, m);
 		meshes_.emplace(newId, m);
 
 		return newId;
@@ -352,14 +391,21 @@ void HRL_SetSpriteDrawOrder(HRL_id _meshid, float _draworder)
 
 
 //Lights//
-HRL_id HRL_CreateLight(HRL_uint _type)
+HRL_id HRL_CreateLight(HRL_id _sceneid, HRL_uint _type)
 {
+	auto it_scene = scenes_.find(_sceneid);
+	if (it_scene == scenes_.end())
+	{
+		return HRL_InvalidID;
+	}
+
 	if (_type == HRL_PointLight || _type == HRL_DirectionalLight || _type == HRL_SpotLight)
 	{
 		auto* l = new HRL_Light();
 		l->type_ = _type;
 
 		HRL_id newId = GenerateHRL_ID();
+		it_scene->second->lights.emplace(newId, l);
 		lights_.emplace(newId, l);
 
 		g_Backend.RHI_UpdateLights(GetLightsVector());
@@ -447,6 +493,7 @@ void HRL_SetLightLocation(HRL_id _lightid, float x, float y, float z)
 		//rappel : la derniere valeur ne compte pas, elle est juste la pour des raisons techniques
 		it->second->position_ = glm::vec4(x, y, z, 0.f);
 
+		printf("set light location, size : %llu\n", GetLightsVector().size());
 		g_Backend.RHI_UpdateLights(GetLightsVector());
 	}
 }
@@ -490,25 +537,56 @@ void HRL_SetTextureMagFilter(HRL_uint _filter)
 }
 
 
+//Scenes//
+HRL_id HRL_CreateScene(int _renderOnScreen)
+{
+	auto* scene = new hrl_scene_t();
+	HRL_id newId = GenerateHRL_ID();
+	scenes_.emplace(newId, scene);
+	g_Backend.RHI_CreateScene(newId, _renderOnScreen);
+	return newId;
+}
+
+void HRL_DeleteScene(HRL_id _sceneid)
+{
+	auto it = scenes_.find(_sceneid);
+	if (it == scenes_.end())
+	{
+		lastErrorCode = "HRL_DeleteScene error : invalid scene ID";
+	}
+	g_Backend.RHI_DeleteScene(_sceneid);
+	delete it->second;
+	scenes_.erase(it);
+}
+
+
 
 //Post Process//
-HRL_id HRL_CreatePostProcess(HRL_id _matid)
+HRL_id HRL_CreatePostProcess(HRL_id _sceneid, HRL_id _matid)
 {
+	auto it_scene = scenes_.find(_sceneid);
+	if (it_scene == scenes_.end())
+	{
+		lastErrorCode = "HRL_CreatePostProcess error : invalid scene ID";
+		return HRL_InvalidID;
+	}
+
 	auto it = materials_.find(_matid);
 	if (it == materials_.end())
 	{
 		lastErrorCode = "HRL_CreatePostProcess error : invalid material ID";
 		return HRL_InvalidID;
 	}
-	else
-	{
-		auto p = new HRL_PostProcess();
-		p->material_ = _matid;
 
-		HRL_id newId = GenerateHRL_ID();
-		post_processes_.emplace(newId, p);
-		return newId;
-	}
+	auto p = new HRL_PostProcess();
+	p->material_ = _matid;
+
+	HRL_id newId = GenerateHRL_ID();
+
+	it_scene->second->post_processes.emplace(newId, p);
+	post_processes_.emplace(newId, p);
+
+	return newId;
 }
 void HRL_DeletePostProcess(HRL_id _postid)
 {
@@ -659,8 +737,15 @@ void HRL_MaterialSetVec4(HRL_id _matid, const char* _uniformName, float x, float
 
 
 
-HRL_id HRL_CreateViewport(HRL_id _cameraid, float x, float y, float _width, float _height)
+HRL_id HRL_CreateViewport(HRL_id _sceneid, HRL_id _cameraid, float x, float y, float _width, float _height)
 {
+	auto it_scene = scenes_.find(_sceneid);
+	if (it_scene == scenes_.end())
+	{
+		lastErrorCode = "HRL_CreateViewport error : invalid scene ID";
+		return HRL_InvalidID;
+	}
+
 	auto it = cameras_.find(_cameraid);
 	if (it == cameras_.end())
 	{
@@ -672,6 +757,7 @@ HRL_id HRL_CreateViewport(HRL_id _cameraid, float x, float y, float _width, floa
 	auto* v = new HRL_Viewport(it->second, x, y, _width, _height);
 
 	HRL_id newId = GenerateHRL_ID();
+	it_scene->second->viewports.emplace(newId, v);
 	viewports_.emplace(newId, v);
 
 	return newId;
@@ -728,8 +814,15 @@ void HRL_SetViewportRect(HRL_id _viewportid, float x, float y, float _width, flo
 
 
 
-HRL_id HRL_CreateCamera(HRL_uint _type)
+HRL_id HRL_CreateCamera(HRL_id _sceneid, HRL_uint _type)
 {
+	auto it_scene = scenes_.find(_sceneid);
+	if (it_scene == scenes_.end())
+	{
+		lastErrorCode = "HRL_CreateCamera error : invalid scene ID";
+		return HRL_InvalidID;
+	}
+
 	if (_type == HRL_Ortho || _type == HRL_Perspective)
 	{
 		auto* cam = new HRL_Camera(
@@ -744,6 +837,7 @@ HRL_id HRL_CreateCamera(HRL_uint _type)
 			1000.f
 			);
 		HRL_id newId = GenerateHRL_ID();
+		it_scene->second->cameras.emplace(newId, cam);
 		cameras_.emplace(newId, cam);
 		return newId;
 	}
@@ -872,4 +966,3 @@ void HRL_SetCameraRotation(HRL_id _camid, float roll, float pitch, float yaw)
 		it->second->rotation_ = glm::vec3(roll, pitch, yaw);
 	}
 }
-

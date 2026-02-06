@@ -3,7 +3,7 @@
  * https://github.com/oscar-soirey/Horizon-Rendering-Library
  *
  * This project was developed by a single passionate developer.
- * I�ve tried to make everything work smoothly, but there may still be bugs.
+ * I ve tried to make everything work smoothly, but there may still be bugs.
  * If you encounter any issues or have suggestions, please feel free to contact me at:
  * oscarsoirey.contact@gmail.com
  * Thank you for your support and understanding
@@ -35,6 +35,24 @@
  #include <stdio.h>
 #endif
 
+
+//compatibilité dll
+//#define HRL_BUILD_DLL
+//#define HRL_USE_DLL
+
+#ifdef _WIN32
+	#ifdef HRL_BUILD_DLL
+		#define HRL_API __declspec(dllexport)   //compilation de la DLL
+	#elif HRL_USE_DLL
+		#define HRL_API __declspec(dllimport)   //utilisation de la DLL
+	#else
+		#define HRL_API
+	#endif
+#else
+	#define HRL_API
+#endif
+
+
 //ajouter des debug views (genre activer que l'albedo ou que la normal, montrer la lumiere, les reflections, etc)
 //suport multiviewport (avec HRL_CreateViewport et tout) (toujours 1 camera de rendu par viewport)
 
@@ -62,8 +80,8 @@ typedef unsigned int HRL_uint;
 #define HRL_OpenGL33										0x0001
 #define HRL_OpenGL45										0x0002
 #define HRL_Vulkan											0x0003
-#define HRL_DX11												0x0004
-#define HRL_DX12												0x0005
+#define HRL_D3D11												0x0004
+#define HRL_D3D12												0x0005
 #define HRL_Metal												0x0006
 #define HRL_NVN													0x0007
 #define HRL_GNM													0x0008
@@ -109,23 +127,23 @@ extern "C" {
 #endif
 
 	//HRL Init
-	void HRL_Init(HRL_uint _api);
-	void HRL_InitContext(HRL_uint _width, HRL_uint _height, void* _loader);
-	void HRL_Shutdown();
+	HRL_API void HRL_Init(HRL_uint _api);
+	HRL_API void HRL_InitContext(HRL_uint _width, HRL_uint _height, void* _loader);
+	HRL_API void HRL_Shutdown();
 
 	//HRL Frame
-	void HRL_BeginFrame();
-	void HRL_EndFrame();
+	HRL_API void HRL_BeginFrame();
+	HRL_API void HRL_EndFrame();
 
 	//Window
 	/**
 	 * Call this function when window is resized
 	 */
-	void HRL_WindowResizeCallback(int _width, int _height);
+	HRL_API void HRL_WindowResizeCallback(int _width, int _height);
 
 
 	//Errors
-	const char* HRL_GetLastError();
+	HRL_API const char* HRL_GetLastError();
 
 
 	//HRL Meshes
@@ -133,25 +151,24 @@ extern "C" {
 	 * @param _type HRL_Sprite, HRL_2D_Mesh, HRL_3D_Mesh
 	 * @return HRL_id of the new object
 	 */
-	HRL_id HRL_CreateMesh(HRL_uint _type);
+	HRL_API HRL_id HRL_CreateMesh(HRL_id _sceneid, HRL_uint _type);
 	/**
 	 * @param _meshid HRL_id of the mesh
 	 */
-	void HRL_DeleteMesh(HRL_id _meshid);
+	HRL_API void HRL_DeleteMesh(HRL_id _meshid);
 
 	/**
 	 * @param _meshid HRL_id of the mesh
 	 * @param _matid HRL_id of the mat
 	 */
-	void HRL_SetMeshMaterial(HRL_id _meshid, HRL_id _matid);
-	void HRL_SetMeshLocation(HRL_id _meshid, float x, float y, float z);
-	void HRL_SetMeshRotation(HRL_id _meshid, float roll, float pitch, float yaw);
-	void HRL_SetMeshScale(HRL_id _meshid, float x, float y, float z);
-
+	HRL_API void HRL_SetMeshMaterial(HRL_id _meshid, HRL_id _matid);
+	HRL_API void HRL_SetMeshLocation(HRL_id _meshid, float x, float y, float z);
+	HRL_API void HRL_SetMeshRotation(HRL_id _meshid, float roll, float pitch, float yaw);
+	HRL_API void HRL_SetMeshScale(HRL_id _meshid, float x, float y, float z);
 	/**
 	 * This will be used only when 2 sprites are collinding in Z axle
 	 */
-	void HRL_SetSpriteDrawOrder(HRL_id _meshid, float _draworder);
+	HRL_API void HRL_SetSpriteDrawOrder(HRL_id _meshid, float _draworder);
 
 
 	//Lights
@@ -159,18 +176,18 @@ extern "C" {
 	 * @param _type HRL_PointLight, HRL_DirectionalLight, HRL_SpotLight
 	 * @return HRL_id of the new object
 	 */
-	HRL_id HRL_CreateLight(HRL_uint _type);
+	HRL_API HRL_id HRL_CreateLight(HRL_id _sceneid, HRL_uint _type);
 	/**
 	 * @param _meshid HRL_id of the light
 	 */
-	void HRL_DeleteLight(HRL_id _lightid);
+	HRL_API void HRL_DeleteLight(HRL_id _lightid);
 
-	void HRL_SetLightColor(HRL_id _lightid, float x, float y, float z);
-	void HRL_SetLightIntensity(HRL_id _lightid, float i);
-	void HRL_SetLightAttenuation(HRL_id _lightid, float a);
+	HRL_API void HRL_SetLightColor(HRL_id _lightid, float x, float y, float z);
+	HRL_API void HRL_SetLightIntensity(HRL_id _lightid, float i);
+	HRL_API void HRL_SetLightAttenuation(HRL_id _lightid, float a);
 
-	void HRL_SetLightLocation(HRL_id _lightid, float x, float y, float z);
-	void HRL_SetLightRotation(HRL_id _lightid, float roll, float pitch, float yaw);
+	HRL_API void HRL_SetLightLocation(HRL_id _lightid, float x, float y, float z);
+	HRL_API void HRL_SetLightRotation(HRL_id _lightid, float roll, float pitch, float yaw);
 
 
 
@@ -183,28 +200,32 @@ extern "C" {
 	 * @param _fileContent content of the file (supported extensions) (opened in binary mode)
 	 * @return HRL_id of the new object
 	 */
-	HRL_id HRL_CreateTexture(const char* _fileContent, size_t _bufferSize);
+	HRL_API HRL_id HRL_CreateTexture(const char* _fileContent, size_t _bufferSize);
 	/**
-	 * @param _meshid HRL_id of the light
+	 * @param _textureid HRL_id of the texture
 	 */
-	void HRL_DeleteTexture(HRL_id _textureid);
+	HRL_API void HRL_DeleteTexture(HRL_id _textureid);
 	//ajouter des fonctions de controle des textures
 
 	//when the texture is smaller on the screen than its real size
-	void HRL_SetTextureMinFilter(HRL_uint _filter);
+	HRL_API void HRL_SetTextureMinFilter(HRL_uint _filter);
 	//when the texture is bigger on the screen than its real size
-	void HRL_SetTextureMagFilter(HRL_uint _filter);
+	HRL_API void HRL_SetTextureMagFilter(HRL_uint _filter);
 
+
+	//scenes
+	HRL_API HRL_id HRL_CreateScene(int _renderOnScreen);
+	HRL_API void HRL_DeleteScene(HRL_id _sceneid);
 
 
 	//Post Process
-	HRL_id HRL_CreatePostProcess(HRL_id _matid);
-	void HRL_DeletePostProcess(HRL_id _postid);
+	HRL_API HRL_id HRL_CreatePostProcess(HRL_id _sceneid, HRL_id _matid);
+	HRL_API void HRL_DeletePostProcess(HRL_id _postid);
 
 
 	//Shaders
-	HRL_id HRL_CreateShader(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize);
-	void HRL_DeleteShader(HRL_id _shaderid);
+	HRL_API HRL_id HRL_CreateShader(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize);
+	HRL_API void HRL_DeleteShader(HRL_id _shaderid);
 
 
 	//Materials
@@ -213,19 +234,19 @@ extern "C" {
 	 * @param _shaderContent Code of the fragment shader (opened in binary mode)
 	 * @return HRL_id of the new object
 	 */
-	HRL_id HRL_CreateMaterial(HRL_id _shaderid);
+	HRL_API HRL_id HRL_CreateMaterial(HRL_id _shaderid);
 	/**
 	 * @param _meshid HRL_id of the light
 	 */
-	void HRL_DeleteMaterial(HRL_id _matid);
+	HRL_API void HRL_DeleteMaterial(HRL_id _matid);
 
-	void HRL_MaterialSetInt(HRL_id _matid, const char* _uniformName, int a);
-	void HRL_MaterialSetTexture(HRL_id _matid, const char* _uniformName, HRL_id _textureid);
-	void HRL_MaterialSetBool(HRL_id _matid, const char* _uniformName, int a);
-	void HRL_MaterialSetFloat(HRL_id _matid, const char* _uniformName, float a);
-	void HRL_MaterialSetVec2(HRL_id _matid, const char* _uniformName, float x, float y);
-	void HRL_MaterialSetVec3(HRL_id _matid, const char* _uniformName, float x, float y, float z);
-	void HRL_MaterialSetVec4(HRL_id _matid, const char* _uniformName, float x, float y, float z, float w);
+	HRL_API void HRL_MaterialSetInt(HRL_id _matid, const char* _uniformName, int a);
+	HRL_API void HRL_MaterialSetTexture(HRL_id _matid, const char* _uniformName, HRL_id _textureid);
+	HRL_API void HRL_MaterialSetBool(HRL_id _matid, const char* _uniformName, int a);
+	HRL_API void HRL_MaterialSetFloat(HRL_id _matid, const char* _uniformName, float a);
+	HRL_API void HRL_MaterialSetVec2(HRL_id _matid, const char* _uniformName, float x, float y);
+	HRL_API void HRL_MaterialSetVec3(HRL_id _matid, const char* _uniformName, float x, float y, float z);
+	HRL_API void HRL_MaterialSetVec4(HRL_id _matid, const char* _uniformName, float x, float y, float z, float w);
 
 
 	//Viewport
@@ -236,10 +257,10 @@ extern "C" {
 	 * [0,0] ----- [1,0]
 	 * [0,1] ----- [1,1]
 	 */
-	HRL_id HRL_CreateViewport(HRL_id _cameraid, float x, float y, float _width, float _height);
-	void HRL_DeleteViewport(HRL_id _viewportid);
-	void HRL_SetViewportCamera(HRL_id _viewportid, HRL_id _camid);
-	void HRL_SetViewportRect(HRL_id _viewportid, float x, float y, float _width, float _height);
+	HRL_API HRL_id HRL_CreateViewport(HRL_id _sceneid, HRL_id _cameraid, float x, float y, float _width, float _height);
+	HRL_API void HRL_DeleteViewport(HRL_id _viewportid);
+	HRL_API void HRL_SetViewportCamera(HRL_id _viewportid, HRL_id _camid);
+	HRL_API void HRL_SetViewportRect(HRL_id _viewportid, float x, float y, float _width, float _height);
 
 
 	//Camera
@@ -248,22 +269,22 @@ extern "C" {
 	 * @param _viewportid Id of the viewport (wich includes the camera) (default viewport id = 0)
 	 * @param _type HRL_Ortho, HRL_Perspective
 	 */
-	HRL_id HRL_CreateCamera(HRL_uint _type);
-	void HRL_DeleteCamera(HRL_id _camid);
+	HRL_API HRL_id HRL_CreateCamera(HRL_id _sceneid, HRL_uint _type);
+	HRL_API void HRL_DeleteCamera(HRL_id _camid);
 
-	void HRL_SetCameraType(HRL_id _camid, HRL_uint _type);
-	void HRL_SetCameraOrthoVertical(HRL_id _camid, float _height);
-	void HRL_SetCameraPerspectiveFov(HRL_id _camid, float _fov);
+	HRL_API void HRL_SetCameraType(HRL_id _camid, HRL_uint _type);
+	HRL_API void HRL_SetCameraOrthoVertical(HRL_id _camid, float _height);
+	HRL_API void HRL_SetCameraPerspectiveFov(HRL_id _camid, float _fov);
 
-	void HRL_SetCameraNearPlane(HRL_id _camid, float _nearPlane);
-	void HRL_SetCameraFarPlane(HRL_id _camid, float _farPlane);
+	HRL_API void HRL_SetCameraNearPlane(HRL_id _camid, float _nearPlane);
+	HRL_API void HRL_SetCameraFarPlane(HRL_id _camid, float _farPlane);
 
-	void HRL_SetCameraPosition(HRL_id _camid, float x, float y, float z);
+	HRL_API void HRL_SetCameraPosition(HRL_id _camid, float x, float y, float z);
 	/**
 	 * Backend information :
 	 * Roll : X, Pitch : Y, Yaw : Z
 	 */
-	void HRL_SetCameraRotation(HRL_id _camid, float roll, float pitch, float yaw);
+	HRL_API void HRL_SetCameraRotation(HRL_id _camid, float roll, float pitch, float yaw);
 
 
 #ifdef __cplusplus
