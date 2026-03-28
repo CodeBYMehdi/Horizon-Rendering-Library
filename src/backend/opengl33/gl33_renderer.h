@@ -20,11 +20,12 @@ void GL33_DrawMesh(HRL_Mesh* mesh);
 
 void GL33_UpdateLights(const std::vector<HRL_Light*>& lights);
 
-HRL_id GL33_CreateTexture(const char* _imageContent, const size_t _imageSize);
+HRL_id GL33_CreateTexture(const char* _imageContent, size_t _imageSize);
 void GL33_DeleteTexture(HRL_id _id);
 
 void GL33_CreateScene(HRL_id _newSceneid, int _renderOnScreen);
 void GL33_DeleteScene(HRL_id _sceneid);
+void GL33_ResizeSceneTexture(HRL_id _sceneid, int _width, int _height);
 
 HRL_id GL33_CreateShader(const char* _vertContent, size_t _vertSize, const char* _fragContent, size_t _fragSize);
 void GL33_DeleteShader(HRL_id _id);

@@ -41,6 +41,8 @@ typedef struct {
 	void(*RHI_DeleteScene)(HRL_id sceneid);
 	void(*RHI_BindScene)(HRL_id sceneid);
 	void(*RHI_ClearScene)();
+	void(*RHI_ResizeSceneTexture)(HRL_id sceneid, int width, int height);
+	void(*RHI_EnableColorPickingBuffer)(HRL_id sceneid, int enable);
 
 	//Shaders//
 	HRL_id(*RHI_CreateShader)(const char* vertContent, size_t vertSize, const char* fragContent, size_t fragSize);

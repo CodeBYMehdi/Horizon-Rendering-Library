@@ -107,7 +107,27 @@ add_library(hrl STATIC
         src/backend/opengl33/gl33_texture.cpp
 )
 
+add_library(hrls SHARED
+        #third-party
+        third_party/glad/glad.c
+
+        #fichiers ressources générés
+        ${EMBEDDED_SOURCES}
+
+        src/hrl.cpp
+
+        #core
+        src/core/utils_functions.cpp
+
+        #opengl
+        src/backend/opengl33/gl33_backend.cpp
+        src/backend/opengl33/gl33_renderer.cpp
+        src/backend/opengl33/gl33_shader.cpp
+        src/backend/opengl33/gl33_texture.cpp
+)
+
 
 #link OpenGL
 find_package(OpenGL REQUIRED)
 target_link_libraries(hrl PRIVATE OpenGL::GL)
+target_link_libraries(hrls PRIVATE OpenGL::GL)

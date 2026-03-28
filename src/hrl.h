@@ -163,7 +163,7 @@ extern "C" {
 	 */
 	HRL_API void HRL_SetMeshMaterial(HRL_id _meshid, HRL_id _matid);
 	HRL_API void HRL_SetMeshLocation(HRL_id _meshid, float x, float y, float z);
-	HRL_API void HRL_SetMeshRotation(HRL_id _meshid, float roll, float pitch, float yaw);
+	HRL_API void HRL_SetMeshRotation(HRL_id _meshid, float pitch, float yaw, float roll);
 	HRL_API void HRL_SetMeshScale(HRL_id _meshid, float x, float y, float z);
 	/**
 	 * This will be used only when 2 sprites are collinding in Z axle
@@ -187,7 +187,7 @@ extern "C" {
 	HRL_API void HRL_SetLightAttenuation(HRL_id _lightid, float a);
 
 	HRL_API void HRL_SetLightLocation(HRL_id _lightid, float x, float y, float z);
-	HRL_API void HRL_SetLightRotation(HRL_id _lightid, float roll, float pitch, float yaw);
+	HRL_API void HRL_SetLightRotation(HRL_id _lightid, float pitch, float yaw, float roll);
 
 
 
@@ -212,8 +212,19 @@ extern "C" {
 
 
 	//scenes
+	/**
+	 * @param _renderOnScreen render scene directely on the screen or render in a texture buffer.
+	 * Default texture buffer size : 480x480, call ResizeSceneTexture to resize
+	 */
 	HRL_API HRL_id HRL_CreateScene(int _renderOnScreen);
 	HRL_API void HRL_DeleteScene(HRL_id _sceneid);
+	HRL_API void HRL_ResizeSceneTexture(HRL_id _sceneid, int _width, int _height);
+
+	/**
+	 * Util for color picking gpu
+	 * @param _enable 0 for false, 1 for true.
+	 */
+	HRL_API void HRL_EnableColorPickingBuffer(HRL_id _scene, int _enable);
 
 
 	//Post Process
@@ -232,6 +243,7 @@ extern "C" {
 	 * @return HRL_id of the new object
 	 */
 	HRL_API HRL_id HRL_CreateMaterial(HRL_id _shaderid);
+
 	/**
 	 * @param _meshid HRL_id of the light
 	 */
@@ -278,9 +290,9 @@ extern "C" {
 	HRL_API void HRL_SetCameraPosition(HRL_id _camid, float x, float y, float z);
 	/**
 	 * Backend information :
-	 * Roll : X, Pitch : Y, Yaw : Z
+	 * Pitch : X, Yaw : Y, Roll : Z
 	 */
-	HRL_API void HRL_SetCameraRotation(HRL_id _camid, float roll, float pitch, float yaw);
+	HRL_API void HRL_SetCameraRotation(HRL_id _camid, float pitch, float yaw, float roll);
 
 
 #ifdef __cplusplus

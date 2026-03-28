@@ -19,6 +19,7 @@
 #include <vector>
 
 #include <glm/glm.hpp>
+#include <nlohmann/json.hpp>
 
 
 //vtable utilisée pour appeller les fonctions, ne doit jamais etre modifi� apres Init()
@@ -348,7 +349,7 @@ void HRL_SetMeshLocation(HRL_id _meshid, float x, float y, float z)
 	}
 }
 
-void HRL_SetMeshRotation(HRL_id _meshid, float roll, float pitch, float yaw)
+void HRL_SetMeshRotation(HRL_id _meshid, float pitch, float yaw, float roll)
 {
 	auto it = meshes_.find(_meshid);
 	if (it == meshes_.end())
@@ -493,12 +494,11 @@ void HRL_SetLightLocation(HRL_id _lightid, float x, float y, float z)
 		//rappel : la derniere valeur ne compte pas, elle est juste la pour des raisons techniques
 		it->second->position_ = glm::vec4(x, y, z, 0.f);
 
-		printf("set light location, size : %llu\n", GetLightsVector().size());
 		g_Backend.RHI_UpdateLights(GetLightsVector());
 	}
 }
 
-void HRL_SetLightRotation(HRL_id _lightid, float yaw, float pitch, float roll)
+void HRL_SetLightRotation(HRL_id _lightid, float pitch, float yaw, float roll)
 {
 	auto it = lights_.find(_lightid);
 	if (it == lights_.end())
@@ -508,7 +508,7 @@ void HRL_SetLightRotation(HRL_id _lightid, float yaw, float pitch, float roll)
 	else
 	{
 		//rappel : la derniere valeur ne compte pas, elle est juste la pour des raisons techniques
-		it->second->rotation_ = glm::vec4(yaw, pitch, roll, 0.f);
+		it->second->rotation_ = glm::vec4(pitch, yaw, roll, 0.f);
 
 		g_Backend.RHI_UpdateLights(GetLightsVector());
 	}
@@ -553,10 +553,21 @@ void HRL_DeleteScene(HRL_id _sceneid)
 	if (it == scenes_.end())
 	{
 		lastErrorCode = "HRL_DeleteScene error : invalid scene ID";
+		return;
 	}
 	g_Backend.RHI_DeleteScene(_sceneid);
 	delete it->second;
 	scenes_.erase(it);
+}
+
+void HRL_ResizeSceneTexture(HRL_id _sceneid, int _width, int _height)
+{
+	g_Backend.RHI_ResizeSceneTexture(_sceneid, _width, _height);
+}
+
+void HRL_EnableColorPickingBuffer(HRL_id _sceneid, int _enable)
+{
+	g_Backend.RHI_EnableColorPickingBuffer(_sceneid, _enable);
 }
 
 
@@ -734,6 +745,24 @@ void HRL_MaterialSetVec4(HRL_id _matid, const char* _uniformName, float x, float
 		it->second->vec4Params_[_uniformName] = glm::vec4(x, y, z, w);
 	}
 }
+
+HRL_id HRL_CreateMaterialFromJson(const char *_jsonData, size_t _jsonSize)
+{
+	nlohmann::json jfile = nlohmann::json::parse(_jsonData);
+	if (!jfile.contains("surface") || !jfile.contains("shader"))
+	{
+		lastErrorCode = "HRL_CreateMaterialFromJson : file doesn't contains at least 'surface' or 'shader' key";
+		return HRL_InvalidID;
+	}
+
+	HRL_id matID = HRL_CreateMaterial(HRL_SpriteShader);
+	for (const auto& [key, value] : jfile["surface"].items())
+	{
+		//HRL_MaterialSetTexture(matID, key, )
+	}
+	return matID;
+}
+
 
 
 
@@ -954,7 +983,7 @@ void HRL_SetCameraPosition(HRL_id _camid, float x, float y, float z)
 	}
 }
 
-void HRL_SetCameraRotation(HRL_id _camid, float roll, float pitch, float yaw)
+void HRL_SetCameraRotation(HRL_id _camid, float pitch, float yaw, float roll)
 {
 	auto it = cameras_.find(_camid);
 	if (it == cameras_.end())
@@ -963,6 +992,6 @@ void HRL_SetCameraRotation(HRL_id _camid, float roll, float pitch, float yaw)
 	}
 	else
 	{
-		it->second->rotation_ = glm::vec3(roll, pitch, yaw);
+		it->second->rotation_ = glm::vec3(pitch, yaw, roll);
 	}
 }

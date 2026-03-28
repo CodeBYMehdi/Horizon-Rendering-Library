@@ -114,6 +114,7 @@ typedef struct {
 typedef struct {
   GLuint texture_;
   GLuint framebuffer_;
+  unsigned int width_, height_;
 }GL_Scene_t;
 static std::unordered_map<HRL_id, GL_Scene_t*> gpu_scenes_;
 
@@ -138,7 +139,18 @@ std::unordered_map<HRL_id, GL33_Shader*> shaders_;
 //Textures//
 static std::unordered_map<HRL_id, GL33_Texture*> textures_;
 
+#define ALBEDO_INT (0)
+#define NORMAL_INT (1)
+#define SPECULAR_INT (2)
+#define ROUGHNESS_INT (3)
+#define METALIC_INT (4)
+#define ALPHA_INT (5)
+const char* tex_uniform_name[6]
+{
+  "T_Albedo", "T_Normal", "T_Specular", "T_Roughness", "T_Metalic", "T_Alpha"
+};
 
+static std::unordered_map<int, HRL_id> fallback_textures_;
 
 
 
@@ -224,12 +236,26 @@ void GL33_InitContext(HRL_uint _width, HRL_uint _height, void* loader)
 
 
   //Creer les texures de fallback
+  fallback_textures_[ALBEDO_INT] = GL33_CreateTexture((const char*)res_default_albedo_png, res_default_albedo_png_len);
+  fallback_textures_[NORMAL_INT] = GL33_CreateTexture((const char*)res_default_normal_png, res_default_normal_png_len);
+  fallback_textures_[SPECULAR_INT] = GL33_CreateTexture((const char*)res_default_specular_png, res_default_specular_png_len);
+  fallback_textures_[ROUGHNESS_INT] = GL33_CreateTexture((const char*)res_default_roughness_png, res_default_roughness_png_len);
+  fallback_textures_[METALIC_INT] = GL33_CreateTexture((const char*)res_default_metalic_png, res_default_metalic_png_len);
+  fallback_textures_[ALPHA_INT] = GL33_CreateTexture((const char*)res_default_alpha_png, res_default_alpha_png_len);
+
+  assert(fallback_textures_[ALBEDO_INT] != HRL_InvalidID && "Failed to load fallback albedo");
+  assert(fallback_textures_[NORMAL_INT] != HRL_InvalidID && "Failed to load fallback normal");
+  assert(fallback_textures_[SPECULAR_INT] != HRL_InvalidID && "Failed to load fallback specular");
+  assert(fallback_textures_[ROUGHNESS_INT] != HRL_InvalidID && "Failed to load fallback roughness");
+  assert(fallback_textures_[METALIC_INT] != HRL_InvalidID && "Failed to load fallback metalic");
+  assert(fallback_textures_[ALPHA_INT] != HRL_InvalidID && "Failed to load fallback alpha");
 
 }
 
 void GL33_ResetFramebuffer()
 {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0, 0, GetWindowWidth(), GetWindowHeight());
 }
 
 
@@ -241,9 +267,12 @@ void GL33_Shutdown()
 }
 
 //passer plus tard a une structure RenderContext
+static GL_Scene_t* currentScene;
 static HRL_Viewport* currentViewport;
 static HRL_Camera* currentCamera;
 static GL33_Shader* currentShader;
+
+static unsigned int currentWidth, currentHeight;
 
 //stocke le nombre de texures bindées avant de draw.
 //permet de savoir jusqu'a ou unbind les slots gl
@@ -257,7 +286,7 @@ void GL33_BindScene(HRL_id _sceneid)
     SetErrorCode("Bind Scene error : scene id not valid");
     return;
   }
-  printf("Framebuffer id : %d. Scene id : %d\n", it->second->framebuffer_, _sceneid);
+  currentScene = it->second;
   //si on veut draw on screen, le framebuffer id sera 0, donc l'ecran
   glBindFramebuffer(GL_FRAMEBUFFER, it->second->framebuffer_);
 }
@@ -270,11 +299,23 @@ void GL33_ClearScene()
 
 void GL33_BindViewport(HRL_Viewport* viewport)
 {
-  glViewport((GLint)(viewport->x_*(float)GetWindowWidth()),
+  //si on render sur l'ecran, on prend les dimensions de l'ecran, sinon, la taille de la scene
+  if (currentScene->framebuffer_ == 0)
+  {
+    currentWidth = GetWindowWidth();
+    currentHeight = GetWindowHeight();
+  }
+  else
+  {
+    currentWidth = currentScene->width_;
+    currentHeight = currentScene->height_;
+  }
+
+  glViewport((GLint)(viewport->x_*(float)currentWidth),
     //pour que 0 soit le haut et 1 le bas
-    (GLint)((1 - viewport->y_ - viewport->height_)*(float)GetWindowHeight()),
-    (GLint)(viewport->width_ * (float)GetWindowWidth()),
-    (GLint)(viewport->height_ * (float)GetWindowHeight()));
+    (GLint)((1 - viewport->y_ - viewport->height_)*(float)currentHeight),
+    (GLint)(viewport->width_ * (float)currentWidth),
+    (GLint)(viewport->height_ * (float)currentHeight));
   currentViewport = viewport;
   currentCamera = viewport->camera_;
 }
@@ -293,8 +334,8 @@ void GL33_BindMaterial(HRL_Material* mat)
   s->Use();
 
   //taille absolue du viewport width et height (on prend en compte la taille de la fenetre et la taille relative du viewport HRL)
-  float viewportWidth  = (float)GetWindowWidth() * currentViewport->width_;
-  float viewportHeight = (float)GetWindowHeight() * currentViewport->height_;
+  float viewportWidth  = (float)currentWidth * currentViewport->width_;
+  float viewportHeight = (float)currentHeight * currentViewport->height_;
 
   //on evite la division par 0
   if (viewportHeight < 1e-3f)
@@ -337,24 +378,31 @@ void GL33_BindMaterial(HRL_Material* mat)
   //utilisé pour unbind les textures apres avoir draw
   textureSlotsBinded = (int)mat->textureParams_.size();
 
-  size_t index = 0;
-  for (auto [name, value] : mat->textureParams_)
+  for (auto [name, val] : mat->textureParams_)
   {
-    //on recherche la texture via son id HRL
-    auto itTexture = textures_.find(value);
+    printf("material param, name : %s, hrl id : %u", name, val);
+  }
+
+  for (int i=0; i<6; i++)
+  {
+    //on passe toujours les memes uniforms
+    s->SetInt(tex_uniform_name[i], i);
+
+    //on recherche la texture
+    auto itTexture = textures_.find(mat->textureParams_[tex_uniform_name[i]]);
     if (itTexture == textures_.end())
     {
-      SetErrorCode("Material set texture uniform : invalid texture (HRL_id)");
-      return;
+      //texture non trouvée, on passe la fallback texture
+      glActiveTexture(GL_TEXTURE0 + i);
+      HRL_id fallback_hrl_id = fallback_textures_[i];
+      glBindTexture(GL_TEXTURE_2D, textures_[fallback_hrl_id]->GetGL_ID());
+      printf("texture non trouvée : %s\n", tex_uniform_name[i]);
+      continue;
     }
 
-    //la classe texture gere le bind sur le bon container de texture (GL_TEXTURE0, GL_TEXTURE1, ...).
-    glActiveTexture(GL_TEXTURE0 + index);
+    printf("texture trouvée : %s\n", tex_uniform_name[i]);
+    glActiveTexture(GL_TEXTURE0 + i);
     glBindTexture(GL_TEXTURE_2D, itTexture->second->GetGL_ID());
-
-    s->SetInt(name, (int)index);
-
-    index++;
   }
 
   for (auto [name, value] : mat->floatParams_)
@@ -445,8 +493,6 @@ void GL33_UpdateLights(const std::vector<HRL_Light*>& _lights)
     ++count;
   }
 
-
-  printf("update lights, size : %llu\n", count);
   //on passe les données à opengl
   glBindBuffer(GL_UNIFORM_BUFFER, ubo[LIGHT_UBO]);
   glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GL_Light_t), gpuLights);
@@ -454,7 +500,7 @@ void GL33_UpdateLights(const std::vector<HRL_Light*>& _lights)
 }
 
 
-HRL_id GL33_CreateTexture(const char* _imageContent, const size_t _imageSize)
+HRL_id GL33_CreateTexture(const char* _imageContent, size_t _imageSize)
 {
   //on crée la texture et on récupere le code d'erreur
   auto* t = new GL33_Texture();
@@ -530,8 +576,11 @@ void GL33_CreateScene(HRL_id _newSceneid, int _renderOnScreen)
   {
     glGenTextures(1, &scene->texture_);
     glBindTexture(GL_TEXTURE_2D, scene->texture_);
-    //1280, 720, Test//
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1280, 720, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 480, 480, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    scene->width_ = 480;
+    scene->height_ = 480;
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -560,6 +609,28 @@ void GL33_DeleteScene(HRL_id _sceneid)
 
   delete it->second;
   gpu_scenes_.erase(it);
+}
+
+void GL33_ResizeSceneTexture(HRL_id _sceneid, int _width, int _height)
+{
+  auto it = gpu_scenes_.find(_sceneid);
+  if (it == gpu_scenes_.end())
+  {
+    SetErrorCode("GL33_ResizeSceneTexture error : invalid scene id");
+    return;
+  }
+  if (it->second->framebuffer_ == 0)
+  {
+    SetErrorCode("GL33_ResizeSceneTexture error : scene is render on the screen");
+    return;
+  }
+
+  GLuint tex = it->second->texture_;
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+  it->second->width_ = _width;
+  it->second->height_ = _height;
 }
 
 

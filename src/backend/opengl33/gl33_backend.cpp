@@ -27,6 +27,7 @@ HRL_vtable GetOpenGL33Backend()
 
 	vtable.RHI_CreateScene = GL33_CreateScene;
 	vtable.RHI_DeleteScene = GL33_DeleteScene;
+	vtable.RHI_ResizeSceneTexture = GL33_ResizeSceneTexture;
 
 	vtable.RHI_CreateShader = GL33_CreateShader;
 	vtable.RHI_DeleteShader = GL33_DeleteShader;

@@ -43,15 +43,15 @@ glm::vec3 GetForwardVector(glm::vec3 _rot)
 glm::vec3 GetRightVector(glm::vec3 _rot)
 {
   return glm::normalize(glm::cross(
-    glm::vec3(0.0f, 1.0f, 0.0f),
-    GetForwardVector(_rot)
+    GetForwardVector(_rot),
+    glm::vec3(0.0f, 1.0f, 0.0f)
   ));
 }
 glm::vec3 GetUpVector(glm::vec3 _rot)
 {
   return glm::normalize(glm::cross(
-    GetForwardVector(_rot),
-    GetRightVector(_rot)
+    GetRightVector(_rot),
+    GetForwardVector(_rot)
   ));
 }
 

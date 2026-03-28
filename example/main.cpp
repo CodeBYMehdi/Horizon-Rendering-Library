@@ -151,12 +151,14 @@ int main()
 {
   //on init HRL avec l'api cible
   HRL_Init(HRL_OpenGL33);
+  HRL_CheckErrors();
 
   //GLFW WINDOW//
 
   //(la gestion de glfw est mauvaise : il faudrait ajouter des logs en cas de crash, mais la ca ne nous interesse pas)
   //on init glfw
   glfwInit();
+  HRL_CheckErrors();
 
   //on crée la fenetre
   GLFWwindow* win = glfwCreateWindow(1280, 720, "HRL Example", nullptr, nullptr);
@@ -164,21 +166,26 @@ int main()
   //important! : le contexte doit etre actif avant HRL_InitContext
   glfwMakeContextCurrent(win);
   glfwSetFramebufferSizeCallback(win, framebuffer_size_callback);
+  HRL_CheckErrors();
 
   //cacher le curseur
   glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
   //verouiller la souris au centre
   glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  HRL_CheckErrors();
 
   //désactiver la v-sync
   glfwSwapInterval(0);
+  HRL_CheckErrors();
 
 
   //on appelle initcontext avec le loader glfw (qui renvoie l'adresse opaque de la fenetre en gros)
   HRL_InitContext(1280, 720, (void*)glfwGetProcAddress);
+  HRL_CheckErrors();
 
   HRL_id scene = HRL_CreateScene(1);
-  HRL_DeleteScene(0);
+  HRL_CheckErrors();
+  HRL_CheckErrors();
 
   //on ouvre la texture
   size_t texSize;
@@ -213,10 +220,6 @@ int main()
   HRL_SetMeshScale(sprite2, 80, 80, 80);
 
 
-
-  //viewport 0 (default) (uses by default camera id 0)
-  //HRL_SetViewportRect(0,0.f,0.f,1.f, 0.5f);
-
   //camera 0 (default)
   HRL_SetCameraType(0, HRL_Perspective);
   HRL_SetCameraPerspectiveFov(0, 40.f);
@@ -224,8 +227,8 @@ int main()
 
   //other camera and viewport
   HRL_id cam1 = HRL_CreateCamera(scene, HRL_Perspective);
-  HRL_SetCameraPerspectiveFov(cam1, 130.f);
-  HRL_id viewport = HRL_CreateViewport(scene, cam1, 0.f, 0.5f, 1.f, 0.5f);
+  HRL_SetCameraPerspectiveFov(cam1, 90.f);
+  HRL_id viewport = HRL_CreateViewport(scene, cam1, 0.f, 0.f, 1.f, 1.f);
 
 
   //Lights

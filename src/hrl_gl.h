@@ -46,6 +46,7 @@
   HRL_API unsigned int HRL_GL_GetShaderGL_ID(HRL_id _shaderid);
 
 	HRL_API unsigned int HRL_GL_GetSceneTextureGL_ID(HRL_id _sceneid);
+  HRL_API unsigned int HRL_GL_GetSceneColorBuferGL_ID(HRL_id _sceneid);
 
 #ifdef __cplusplus
   }
