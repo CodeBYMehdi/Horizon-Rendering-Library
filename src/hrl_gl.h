@@ -37,13 +37,16 @@
   * @param _textureid HRL_id of the texture
   * @return Returns the OpenGL backend id of the GPU texture
   */
-	unsigned int HRL_GL_GetTextureGL_ID(HRL_id _textureid);
+	HRL_API unsigned int HRL_GL_GetTextureGL_ID(HRL_id _textureid);
 
   /**
 	 * @param _shaderid HRL_id of the shader
 	 * @return Returns the OpenGL backend id of the shader program
 	 */
-  unsigned int HRL_GL_GetShaderGL_ID(HRL_id _shaderid);
+  HRL_API unsigned int HRL_GL_GetShaderGL_ID(HRL_id _shaderid);
+
+	HRL_API unsigned int HRL_GL_GetSceneTextureGL_ID(HRL_id _sceneid);
+  HRL_API unsigned int HRL_GL_GetSceneColorBuferGL_ID(HRL_id _sceneid);
 
 #ifdef __cplusplus
   }

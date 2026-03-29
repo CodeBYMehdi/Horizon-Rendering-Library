@@ -3,6 +3,9 @@ project(hrl)
 
 set(CMAKE_CXX_STANDARD 20)
 
+#debug messages
+set(CMAKE_MESSAGE_LOG_LEVEL DEBUG)
+
 include_directories(src)
 include_directories(third_party)
 
@@ -70,6 +73,7 @@ function(generate_ressources_file_header)
     )
     foreach(RES ${EMBEDDED_RESOURCES})
         file(APPEND ${RESSOURCES_H}
+                "//${RES}\n"
                 "extern unsigned char ${RES}[];\n"
                 "extern size_t ${RES}_len;\n\n"
         )
@@ -103,7 +107,27 @@ add_library(hrl STATIC
         src/backend/opengl33/gl33_texture.cpp
 )
 
+add_library(hrls SHARED
+        #third-party
+        third_party/glad/glad.c
+
+        #fichiers ressources générés
+        ${EMBEDDED_SOURCES}
+
+        src/hrl.cpp
+
+        #core
+        src/core/utils_functions.cpp
+
+        #opengl
+        src/backend/opengl33/gl33_backend.cpp
+        src/backend/opengl33/gl33_renderer.cpp
+        src/backend/opengl33/gl33_shader.cpp
+        src/backend/opengl33/gl33_texture.cpp
+)
+
 
 #link OpenGL
 find_package(OpenGL REQUIRED)
 target_link_libraries(hrl PRIVATE OpenGL::GL)
+target_link_libraries(hrls PRIVATE OpenGL::GL)

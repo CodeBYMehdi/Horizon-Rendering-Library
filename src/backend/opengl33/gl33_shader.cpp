@@ -155,6 +155,5 @@ void GL33_Shader::SetMat4(const std::string &name, const glm::mat4 &value)
 GLint GL33_Shader::FindUniformLocation(const std::string &name)
 {
   auto [it, inserted] = uniform_locations_.try_emplace(name, glGetUniformLocation(id, name.c_str()));
-  //printf("name : %s, loc : %d\n", name.c_str(), it->second);
   return it->second;
 }

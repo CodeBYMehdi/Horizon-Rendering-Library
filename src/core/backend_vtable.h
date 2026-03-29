@@ -16,6 +16,9 @@ typedef struct {
 	//Draw & batching//
 	void(*RHI_BeginFrame)();
 
+	//Call at the end of function end frame
+	void(*RHI_ResetFramebuffer)();
+
 	//Bind Viewport appeller avant les autres binds et draw car il d�finit la camera!
 	void(*RHI_BindViewport)(HRL_Viewport* viewport);
 	void(*RHI_BindMaterial)(HRL_Material* mat);
@@ -32,6 +35,14 @@ typedef struct {
 	//Textures//
 	HRL_id(*RHI_CreateTexture)(const char* imageContent, const size_t imageSize);
 	void(*RHI_DeleteTexture)(HRL_id id);
+
+	//Scenes//
+	void(*RHI_CreateScene)(HRL_id newSceneId, int renderOnScreen);
+	void(*RHI_DeleteScene)(HRL_id sceneid);
+	void(*RHI_BindScene)(HRL_id sceneid);
+	void(*RHI_ClearScene)();
+	void(*RHI_ResizeSceneTexture)(HRL_id sceneid, int width, int height);
+	void(*RHI_EnableColorPickingBuffer)(HRL_id sceneid, int enable);
 
 	//Shaders//
 	HRL_id(*RHI_CreateShader)(const char* vertContent, size_t vertSize, const char* fragContent, size_t fragSize);

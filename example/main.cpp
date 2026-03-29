@@ -1,5 +1,6 @@
 //HRL single header
 #include <hrl/hrl.h>
+#include <hrl/hrl_gl.h>
 
 //Window
 #include <iosfwd>
@@ -10,6 +11,12 @@
 
 //Print
 #include <iostream>
+
+
+typedef struct {
+  float x, y, z;
+}vec3;
+
 
 
 //frame time
@@ -144,31 +151,41 @@ int main()
 {
   //on init HRL avec l'api cible
   HRL_Init(HRL_OpenGL33);
+  HRL_CheckErrors();
 
   //GLFW WINDOW//
 
   //(la gestion de glfw est mauvaise : il faudrait ajouter des logs en cas de crash, mais la ca ne nous interesse pas)
   //on init glfw
   glfwInit();
+  HRL_CheckErrors();
 
   //on crée la fenetre
-  GLFWwindow* win = glfwCreateWindow(1280, 720, "HRL Example" , nullptr, nullptr);
+  GLFWwindow* win = glfwCreateWindow(1280, 720, "HRL Example", nullptr, nullptr);
 
   //important! : le contexte doit etre actif avant HRL_InitContext
   glfwMakeContextCurrent(win);
   glfwSetFramebufferSizeCallback(win, framebuffer_size_callback);
+  HRL_CheckErrors();
 
   //cacher le curseur
   glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-  //Verouiller la souris au centre
+  //verouiller la souris au centre
   glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  HRL_CheckErrors();
 
   //désactiver la v-sync
   glfwSwapInterval(0);
+  HRL_CheckErrors();
 
 
   //on appelle initcontext avec le loader glfw (qui renvoie l'adresse opaque de la fenetre en gros)
   HRL_InitContext(1280, 720, (void*)glfwGetProcAddress);
+  HRL_CheckErrors();
+
+  HRL_id scene = HRL_CreateScene(1);
+  HRL_CheckErrors();
+  HRL_CheckErrors();
 
   //on ouvre la texture
   size_t texSize;
@@ -182,9 +199,10 @@ int main()
   HRL_id mat = HRL_CreateMaterial(HRL_SpriteShader);
   HRL_MaterialSetTexture(mat, HRL_T_Albedo, tex);
   HRL_MaterialSetTexture(mat, HRL_T_Normal, normaltex);
+  HRL_MaterialSetFloat(mat, "NormalStrength", 1);
 
   //mesh 1 : canada flag
-  HRL_id sprite = HRL_CreateMesh(HRL_Sprite);
+  HRL_id sprite = HRL_CreateMesh(scene, HRL_Sprite);
   HRL_SetMeshMaterial(sprite, mat);
   HRL_SetMeshScale(sprite, 10, 10, 10);
 
@@ -196,15 +214,11 @@ int main()
   std::string ptString = OpenFile("portugal.jpg", &ptSize);
   HRL_id ptTex = HRL_CreateTexture(ptString.c_str(), ptSize);
   HRL_id ptMat = HRL_CreateMaterial(HRL_SpriteShader);
-  HRL_MaterialSetTexture(ptMat, HRL_T_Albedo, ptTex);
-  HRL_id sprite2 = HRL_CreateMesh(HRL_Sprite);
+  HRL_MaterialSetTexture(ptMat, HRL_T_Normal, ptTex);
+  HRL_id sprite2 = HRL_CreateMesh(scene, HRL_Sprite);
   HRL_SetMeshMaterial(sprite2, ptMat);
   HRL_SetMeshScale(sprite2, 80, 80, 80);
 
-
-
-  //viewport 0 (default) (uses by default camera id 0)
-  //HRL_SetViewportRect(0,0.f,0.f,1.f, 0.5f);
 
   //camera 0 (default)
   HRL_SetCameraType(0, HRL_Perspective);
@@ -212,18 +226,36 @@ int main()
   HRL_SetCameraFarPlane(0, 10000.f);
 
   //other camera and viewport
-  HRL_id cam1 = HRL_CreateCamera(HRL_Perspective);
-  HRL_SetCameraPerspectiveFov(cam1, 130.f);
-  //HRL_id viewport = HRL_CreateViewport(cam1, 0.f, 0.5f, 1.f, 0.5f);
+  HRL_id cam1 = HRL_CreateCamera(scene, HRL_Perspective);
+  HRL_SetCameraPerspectiveFov(cam1, 90.f);
+  HRL_id viewport = HRL_CreateViewport(scene, cam1, 0.f, 0.f, 1.f, 1.f);
 
 
   //Lights
-  HRL_id light0 = HRL_CreateLight(HRL_PointLight);
+  vec3 lightpos(0.f, 0.f, 0.f);
+  HRL_id light0 = HRL_CreateLight(scene, HRL_PointLight);
   HRL_SetLightAttenuation(light0, 0.02f);
   HRL_SetLightIntensity(light0, 5.f);
   HRL_SetLightColor(light0, 1.f, 1.f, 1.f);
-  HRL_SetLightLocation(light0, 10.f, 0.f, 0.f);
   HRL_SetLightRotation(light0, 0.f, 0.f, 0.f);
+
+
+  size_t liAlbSize;
+  size_t liNorSize;
+  std::string AlbString = OpenFile("point_light.png", &liAlbSize);
+  std::string NorString = OpenFile("normal_test.png", &liNorSize);
+  HRL_id liAlb = HRL_CreateTexture(AlbString.c_str(), liAlbSize);
+  HRL_id liNor = HRL_CreateTexture(NorString.c_str(), liNorSize);
+
+  HRL_id liMat = HRL_CreateMaterial(HRL_SpriteShader);
+  HRL_MaterialSetTexture(liMat, HRL_T_Albedo, liAlb);
+  HRL_MaterialSetTexture(liMat, HRL_T_Normal, liNor);
+
+  HRL_id sprite_light = HRL_CreateMesh(scene, HRL_Sprite);
+  HRL_SetMeshMaterial(sprite_light, liMat);
+  HRL_SetMeshScale(sprite_light, 2, 2, 2);
+  HRL_SetMeshLocation(sprite_light, 10, 10, 10);
+  HRL_SetSpriteDrawOrder(sprite_light, 50.f);
 
 
   //laisser
@@ -255,6 +287,10 @@ int main()
 
     HRL_SetCameraPosition(cam1, camX, camY, camZ);
     HRL_SetCameraRotation(cam1, pitch, yaw, 0.f);
+
+    lightpos.z += (float)dt;
+    HRL_SetLightLocation(light0, lightpos.x, lightpos.y, lightpos.z + 10);
+    HRL_SetMeshLocation(sprite_light, lightpos.x, lightpos.y, lightpos.z);
 
     //ptZRot += 1.f * (float)dt;
     //HRL_SetMeshRotation(sprite2, 0.f, 0.f, ptZRot);
